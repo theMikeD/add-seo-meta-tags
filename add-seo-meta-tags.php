@@ -11,18 +11,19 @@ This is a rewriteen version of the significantly modified version of the add-met
 rewrite was done to bring the code in line with current best practices and standards.
 
 What's new
-*  Most if not all method and property names are different
-*  Dropped checks for WP < v2.3
-*  Updated function calls to use modern functions and filters (such as wp_head -> pre_get_document_title)
-*  Clean phpcs
-*  Plugin file name is different (and more accurate now)
-*  Plugin name as it appears in the Plugin list is different (and more accurate now)
-*  Plugin menu name and Options page name is different (and more accurate now)
-*  Options page and meta boxes are generated using proper APIs instead of raw HTML
-*  Options page and meta box instructions text is clarified
-*  So much wp_kses()
-*  New filters
-*  Removed the reset button on the options panel. Too dangerous.
+ * Most if not all method and property names are different
+ * Dropped checks for WP < v2.3
+ * Updated function calls to use modern functions and filters (such as wp_head -> pre_get_document_title)
+ * Clean phpcs
+ * Plugin file name is different (and more accurate now)
+ * Plugin name as it appears in the Plugin list is different (and more accurate now)
+ * Plugin menu name and Options page name is different (and more accurate now)
+ * Options page and meta boxes are generated using proper APIs instead of raw HTML
+ * Options page and meta box instructions text is clarified
+ * So much wp_kses()
+ * New filters
+ * Removed the reset button on the options panel. Too dangerous.
+ * Removes hardcoded strings in the JS and replaces them with localized strings.
 
 What's the same
 1. Saved option names
@@ -76,14 +77,14 @@ class Add_Meta_Tags {
 	 *
 	 * @var int
 	 */
-	private $max_desc_length = 140;
+	private $max_desc_length = 141;
 
 	/**
 	 * The maximum length for the SEO title. Filterable via amt_title_length()
 	 *
 	 * @var int
 	 */
-	private $max_title_length = 70;
+	private $max_title_length = 71;
 
 	/**
 	 * The option key used to save and retrieve our settings in the options table
@@ -198,10 +199,12 @@ class Add_Meta_Tags {
 	 */
 	public function enqueue_admin_scripts_and_styles() {
 		global $pagenow;
+		md_log( $pagenow );
 		$supported_post_types = $this->get_supported_post_types();
 
-		if ( in_array( $pagenow, array( 'post.php', 'post-new.php' ), true )
-			&& in_array( get_post_type(), $supported_post_types, true ) ) {
+		// Enqueue the CSS, and equeue and localize the JS, if we're on a supported post type page, or the option page.
+		if ( ( in_array( $pagenow, array( 'options-general.php' ), true ) )
+			|| ( in_array( $pagenow, array( 'post.php', 'post-new.php', true ), true ) && in_array( get_post_type(), $supported_post_types, true ) ) ) {
 
 			add_action( 'admin_head', array( $this, 'do_inline_styles' ) );
 
@@ -223,6 +226,9 @@ class Add_Meta_Tags {
 			$max_title_length = absint( apply_filters( 'amt_title_length', $this->max_title_length ) );
 
 			$values_to_send = array(
+				'counter_label'    => __( 'The %%TITLE%% is limited to %%LIMIT%% characters by search engines. %%COUNT%% characters remaining.', 'add-meta-tags' ),
+				'desc_label'       => __( 'description', 'add-meta-tags' ),
+				'title_label'      => __( 'title', 'add-meta-tags' ),
 				'max_desc_length'  => $max_desc_length,
 				'max_title_length' => $max_title_length,
 			);
@@ -325,7 +331,7 @@ class Add_Meta_Tags {
 		 * Step 2: Create the settings section(s).
 		 * This is for visual organization only, but at least one is needed.
 		 */
-		add_settings_section( $this->slug . '_site', __( 'Site Settings', 'add-meta-tags' ), array( $this, 'do_section_site' ), $this->slug );
+		add_settings_section( $this->slug . '_site', __( 'Site-Wide Settings', 'add-meta-tags' ), array( $this, 'do_section_site' ), $this->slug );
 		add_settings_section( $this->slug . '_home', __( 'Homepage Settings', 'add-meta-tags' ), array( $this, 'do_section_home' ), $this->slug );
 		add_settings_section( $this->slug . '_single', __( 'Single Post Settings', 'add-meta-tags' ), array( $this, 'do_section_single' ), $this->slug );
 		add_settings_section( $this->slug . '_page', __( 'Page Settings', 'add-meta-tags' ), array( $this, 'do_section_page' ), $this->slug );
@@ -348,14 +354,14 @@ class Add_Meta_Tags {
 		// Home page options.
 		add_settings_field(
 			'site_description',
-			__( 'Site Description', 'add-meta-tags' ),
+			__( 'Homepage Description', 'add-meta-tags' ),
 			array( $this, 'do_site_description_html' ),
 			$this->slug,
 			$this->slug . '_home'
 		);
 		add_settings_field(
 			'site_keywords',
-			__( 'Keywords', 'add-meta-tags' ),
+			__( 'Homepage Keywords', 'add-meta-tags' ),
 			array( $this, 'do_site_keywords_html' ),
 			$this->slug,
 			$this->slug . '_home'
@@ -404,7 +410,9 @@ class Add_Meta_Tags {
 	 * Displays the HTML form element for the custom_post_types option in the admin options page if
 	 * any valid custom post types are present.
 	 *
-	 * @theMikeD Pass 1
+	 * @theMikeD DONE
+	 *
+	 * @return void
 	 */
 	public function do_custom_post_types_html() {
 
@@ -422,7 +430,7 @@ class Add_Meta_Tags {
 				'strong' => true,
 			)
 		);
-		echo wp_kses( '<ul>', array( 'ul' => true ) );
+		echo wp_kses( '<ul>', self::get_kses_valid_tags__list() );
 
 		$registered_post_types = $this->get_registered_post_types();
 		$supported_post_types  = $this->get_supported_post_types( true );
@@ -435,7 +443,7 @@ class Add_Meta_Tags {
 			);
 		}
 
-		echo wp_kses( '</ul>', array( 'ul' => true ) );
+		echo wp_kses( '</ul>', self::get_kses_valid_tags__list() );
 		echo wp_kses( '</fieldset>', array( 'fieldset' => true ) );
 	}
 
@@ -443,15 +451,24 @@ class Add_Meta_Tags {
 	/**
 	 * Displays the HTML form element for the site_wide_meta option in the admin options page.
 	 *
-	 * @theMikeD Pass 1
+	 * @theMikeD DONE
 	 *
-	 * @todo: remove cols and rows and add css
+	 * @return void
 	 */
 	public function do_site_wide_meta_html() {
 		$stored_options = $this->get_saved_options();
-		echo wp_kses( '<p>' . __( 'Provide the <strong>full XHTML code</strong> of META tags you would like to be included in <strong>all</strong> of your blog pages.', 'add-meta-tags' ) . '</p>', self::get_kses_valid_tags__message() );
-		echo wp_kses( "<textarea name='{$this->options_key}[site_wide_meta]' cols='40' rows='10' class='code'>" . esc_textarea( stripslashes( $stored_options['site_wide_meta'] ) ) . '</textarea>', self::get_kses_valid_tags__textarea() );
-		echo wp_kses( '<p><strong>' . __( 'Example', 'add-meta-tags' ) . '</strong>: <code>&lt;meta name="robots" content="index,follow" /&gt;</code></p>', self::get_kses_valid_tags__message() );
+		echo wp_kses(
+			'<p>' . __( 'Provide the full XHTML code of META tags you would like to be included in <strong>every page of your site</strong>.', 'add-meta-tags' ) . '</p>',
+			self::get_kses_valid_tags__message()
+		);
+		echo wp_kses(
+			"<textarea name='{$this->options_key}[site_wide_meta]' class='code'>" . esc_textarea( stripslashes( $stored_options['site_wide_meta'] ) ) . '</textarea>',
+			self::get_kses_valid_tags__textarea()
+		);
+		echo wp_kses(
+			'<p><strong>' . __( 'Example', 'add-meta-tags' ) . '</strong>: <code>&lt;meta name="robots" content="index,follow" /&gt;</code></p>',
+			self::get_kses_valid_tags__message()
+		);
 	}
 
 
@@ -460,13 +477,12 @@ class Add_Meta_Tags {
 	 *
 	 * @theMikeD Pass 1
 	 *
-	 * @todo: remove cols and rows and add css
 	 * @todo: add note about character limit
 	 */
 	public function do_site_description_html() {
 		$stored_options = $this->get_saved_options();
-		echo wp_kses( '<p>' . __( 'The following text will be used in the "description" meta tag on the <strong>homepage only</strong>. If this is left <strong>empty</strong>, then the blog\'s description from the <em>General Options</em> (Tagline) will be used.', 'add-meta-tags' ) . '</p>', self::get_kses_valid_tags__message() );
-		echo wp_kses( "<textarea name='{$this->options_key}[site_description]' cols='40' rows='10' class='code'>" . esc_textarea( stripslashes( $stored_options['site_description'] ) ) . '</textarea>', self::get_kses_valid_tags__textarea() );
+		echo wp_kses( '<p>' . __( 'The following text will be used in the "description" meta tag on the <strong>homepage only</strong>. If this is left empty, then description from the Tagline (found on the General Options page) will be used.', 'add-meta-tags' ) . '</p>', self::get_kses_valid_tags__message() );
+		echo wp_kses( "<textarea name='{$this->options_key}[site_description]' class='code' id='mt_seo_description'>" . esc_textarea( stripslashes( $stored_options['site_description'] ) ) . '</textarea>', self::get_kses_valid_tags__textarea() );
 	}
 
 
@@ -478,7 +494,7 @@ class Add_Meta_Tags {
 	public function do_site_keywords_html() {
 		$stored_options = $this->get_saved_options();
 		echo wp_kses( '<p>' . __( 'The following keywords will be used for the "keywords" meta tag on the <strong>homepage only</strong>. Provide a comma-delimited list of keywords for your blog. If this field is left <strong>empty</strong>, then all of your blog\'s categories, except for the "Uncategorized" category, will be used as keywords for the "keywords" meta tag.', 'add-meta-tags' ) . '</p>', self::get_kses_valid_tags__message() );
-		echo wp_kses( "<textarea name='{$this->options_key}[site_keywords]' cols='40' rows='10' class='code'>" . esc_textarea( stripslashes( $stored_options['site_keywords'] ) ) . '</textarea>', self::get_kses_valid_tags__textarea() );
+		echo wp_kses( "<textarea name='{$this->options_key}[site_keywords]' class='code'>" . esc_textarea( stripslashes( $stored_options['site_keywords'] ) ) . '</textarea>', self::get_kses_valid_tags__textarea() );
 	}
 
 
@@ -692,8 +708,6 @@ class Add_Meta_Tags {
 		return array(
 			'textarea' => array(
 				'name'     => true,
-				'cols'     => true,
-				'rows'     => true,
 				'class'    => true,
 				'tabindex' => true,
 				'id'       => true,
@@ -1502,6 +1516,7 @@ class Add_Meta_Tags {
 			.mt_counter .count { font-weight: bold; }
 			.mt_counter .positive { color: green; }
 			.mt_counter .negative { color: red; }
+			.settings_page_amt_options textarea.code { width: 100%; height: 4em; max-width: 40em; }
 		</style>
 		<?php
 	}
