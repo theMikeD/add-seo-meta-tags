@@ -426,13 +426,10 @@ class Add_Meta_Tags {
 	 * Methods related to the post edit meta box
 	 */
 
-
 	/**
 	 * Adds the post edit meta box for supported post types.
 	 *
-	 * @theMikeD Pass 1
-	 *
-	 * @todo: confirm this works with only the specified post types
+	 * @theMikeD DONE
 	 *
 	 * @param string  $post_type  The post type of the current edit page.
 	 * @param WP_Post $post       The current post object.
@@ -516,9 +513,9 @@ class Add_Meta_Tags {
 		 * Step 2: Create the settings section(s).
 		 * This is for visual organization only, but at least one is needed.
 		 */
-		add_settings_section( $this->slug . '_site', __( 'Site-Wide Settings', 'add-meta-tags' ), array( $this, 'do_section_site_wide'), $this->slug );
+		add_settings_section( $this->slug . '_site', __( 'Site-Wide Settings', 'add-meta-tags' ), array( $this, 'do_section_site_wide' ), $this->slug );
 		add_settings_section( $this->slug . '_home', __( 'Homepage Settings', 'add-meta-tags' ), array( $this, 'do_section_home' ), $this->slug );
-		add_settings_section( $this->slug . '_single', __( 'Post Settings', 'add-meta-tags' ), array( $this, 'do_section_post'), $this->slug );
+		add_settings_section( $this->slug . '_single', __( 'Post Settings', 'add-meta-tags' ), array( $this, 'do_section_post' ), $this->slug );
 		add_settings_section( $this->slug . '_page', __( 'Page Settings', 'add-meta-tags' ), array( $this, 'do_section_page' ), $this->slug );
 		add_settings_section( $this->slug . '_notes', __( 'Notes on Other Pages', 'add-meta-tags' ), array( $this, 'do_section_notes' ), $this->slug );
 
@@ -540,14 +537,14 @@ class Add_Meta_Tags {
 		add_settings_field(
 			'site_description',
 			__( 'Homepage Description', 'add-meta-tags' ),
-			array( $this, 'do_home_description_html'),
+			array( $this, 'do_home_description_html' ),
 			$this->slug,
 			$this->slug . '_home'
 		);
 		add_settings_field(
 			'site_keywords',
 			__( 'Homepage Keywords', 'add-meta-tags' ),
-			array( $this, 'do_home_keywords_html'),
+			array( $this, 'do_home_keywords_html' ),
 			$this->slug,
 			$this->slug . '_home'
 		);
@@ -595,7 +592,6 @@ class Add_Meta_Tags {
 	 * Create and echo the descriptive text for the site-wide options section.
 	 *
 	 * @theMikeD DONE
-     *
 	 */
 	public function do_section_site_wide() {
 		echo wp_kses( 'These options are site-wide and will apply to every page.', self::get_kses_valid_tags__message() );
@@ -1008,7 +1004,7 @@ class Add_Meta_Tags {
 
 	/**
 	 * Retrieves the enabled SEO options for singular pages, as defined on the main Settings page. Defaults to everything
-     * enabled.
+	 * enabled.
 	 *
 	 * @theMikeD DONE
 	 *
@@ -1224,7 +1220,7 @@ class Add_Meta_Tags {
 	 * Gets the valid tags and attributes for use with general messages in the admin options page and meta boxes.
 	 *
 	 * @theMikeD DONE
-     *
+	 *
 	 * @return array
 	 */
 	private function get_kses_valid_tags__message() {
