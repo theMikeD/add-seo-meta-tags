@@ -369,14 +369,16 @@ class Add_Meta_Tags {
 			$this->slug,
 			$this->slug . '_single'
 		);
-		// CPT selectors. These checkboxes are added together as a fieldset.
-		add_settings_field(
-			'custom_post_types',
-			__( 'Enabled Custom Post Types', 'add-meta-tags' ),
-			array( $this, 'do_custom_post_types_html' ),
-			$this->slug,
-			$this->slug . '_single'
-		);
+		// CPT selectors. These checkboxes are added together as a fieldset, but only if there are in fact custom post types..
+		if ( $this->valid_custom_post_types_are_present() ) {
+			add_settings_field(
+				'custom_post_types',
+				__( 'Enabled Custom Post Types', 'add-meta-tags' ),
+				array( $this, 'do_custom_post_types_html' ),
+				$this->slug,
+				$this->slug . '_single'
+			);
+		}
 
 		// Page selectors. These checkboxes are added together as a fieldset.
 		add_settings_field(
@@ -399,23 +401,20 @@ class Add_Meta_Tags {
 
 
 	/**
-	 * Displays the HTML form element for the custom_post_types option in the admin options page.
+	 * Displays the HTML form element for the custom_post_types option in the admin options page if
+	 * any valid custom post types are present.
 	 *
 	 * @theMikeD Pass 1
 	 */
 	public function do_custom_post_types_html() {
-		$registered_post_types = $this->get_registered_post_types();
 
-		// This gets a normal array, but validate_checkbox expects a hash. If a CPT is in this this it's an implicit true.
-		$saved_post_types = $this->get_supported_post_types( true );
-
-		if ( ! is_array( $registered_post_types ) || empty( $registered_post_types ) ) {
+		if ( ! $this->valid_custom_post_types_are_present() ) {
 			return;
 		}
 
 		echo wp_kses( '<fieldset>', array( 'fieldset' => true ) );
 		echo wp_kses(
-			'<legend>In addition to regular blog posts, you can enable these options for custom post types. Use the checkboxes below to do so. <br><strong>Note</strong>: to appear in this list, custom post types must be registered with the following parameters: <code>public</code> and  <code>show_ui</code></legend>',
+			'<legend>' . __( 'In addition to regular blog posts, you can enable these options for custom post types. Use the checkboxes below to do so. <br><strong>Note</strong>: to appear in this list, custom post types must be registered with the following parameters: <code>public</code> and <code>show_ui</code>', 'add-meta-tags' ) . '</legend>',
 			array(
 				'legend' => true,
 				'code'   => true,
@@ -425,8 +424,11 @@ class Add_Meta_Tags {
 		);
 		echo wp_kses( '<ul>', array( 'ul' => true ) );
 
+		$registered_post_types = $this->get_registered_post_types();
+		$supported_post_types  = $this->get_supported_post_types( true );
+
 		foreach ( $registered_post_types as $post_type ) {
-			$checkbox_value = self::validate_checkbox( $saved_post_types, $post_type->name );
+			$checkbox_value = self::validate_checkbox( $supported_post_types, $post_type->name );
 			echo wp_kses(
 				"<li><input type='checkbox' id='post_type_{$post_type->name}' name='{$this->options_key}[custom_post_types][" . esc_attr( $post_type->name ) . "]' value='1' " . checked( '1', $checkbox_value, false ) . " /><label for='post_type_{$post_type->name}'>" . __( 'Enable ', 'add-meta-tags' ) . wp_strip_all_tags( $post_type->labels->name ) . ' (' . wp_strip_all_tags( $post_type->name ) . ')</label></li>',
 				self::get_kses_valid_tags__checkbox()
@@ -496,7 +498,7 @@ class Add_Meta_Tags {
 		echo wp_kses( "<li><input type='checkbox' id='post_mt_seo_title' name='{$this->options_key}[post_options][mt_seo_title]' value='1' " . checked( '1', $checkbox_value, false ) . " /><label for='post_mt_seo_title'>" . __( 'Enable \'Title\'', 'add-meta-tags' ) . '</label></li>', self::get_kses_valid_tags__checkbox() );
 
 		$checkbox_value = self::validate_checkbox( $stored_options['post_options'], 'mt_seo_description' );
-		md_log( 'Valid? ' . $checkbox_value );
+		// md_log( 'Valid? ' . $checkbox_value );
 		echo wp_kses( "<li><input type='checkbox' id='post_mt_seo_description' name='{$this->options_key}[post_options][mt_seo_description]' value='1' " . checked( '1', $checkbox_value, false ) . " /><label for='post_mt_seo_description'>" . __( 'Enable \'Description\'', 'add-meta-tags' ) . '</label></li>', self::get_kses_valid_tags__checkbox() );
 
 		$checkbox_value = self::validate_checkbox( $stored_options['post_options'], 'mt_seo_keywords' );
@@ -530,7 +532,7 @@ class Add_Meta_Tags {
 		echo wp_kses( "<li><input type='checkbox' id='page_mt_seo_title' name='{$this->options_key}[page_options][mt_seo_title]' value='1' " . checked( '1', $checkbox_value, false ) . " /><label for='page_mt_seo_title'>" . __( 'Enable \'Title\'', 'add-meta-tags' ) . '</label></li>', self::get_kses_valid_tags__checkbox() );
 
 		$checkbox_value = self::validate_checkbox( $stored_options['page_options'], 'mt_seo_description' );
-		md_log( 'Valid? ' . $checkbox_value );
+		// md_log( 'Valid? ' . $checkbox_value );
 		echo wp_kses( "<li><input type='checkbox' id='page_mt_seo_description' name='{$this->options_key}[page_options][mt_seo_description]' value='1' " . checked( '1', $checkbox_value, false ) . " /><label for='page_mt_seo_description'>" . __( 'Enable \'Description\'', 'add-meta-tags' ) . '</label></li>', self::get_kses_valid_tags__checkbox() );
 
 		$checkbox_value = self::validate_checkbox( $stored_options['page_options'], 'mt_seo_keywords' );
@@ -587,7 +589,7 @@ class Add_Meta_Tags {
 	 */
 	private function validate_checkbox( $stored_options, $option_to_check ) {
 		$checkbox_value = '';
-		md_log( $stored_options );
+		// md_log( $stored_options );
 		// The retrieval method ensures that the options retrieved are always an array but it doesn't hurt to check here.
 		if ( ! is_array( $stored_options ) ) {
 			return '';
@@ -1443,8 +1445,8 @@ class Add_Meta_Tags {
 			$data = trim( stripslashes( $data ) );
 		}
 
-		md_log( "Old: $old_data" );
-		md_log( "New: $data" );
+		// md_log( "Old: $old_data" );
+		// md_log( "New: $data" );
 		// Nothing new, and we're not deleting the old.
 		if ( empty( $data ) && empty( $old_data ) ) {
 			return;
@@ -1515,7 +1517,7 @@ class Add_Meta_Tags {
 	 * @return mixed|string         The adjusted title
 	 */
 	public function filter_the_title( $title, $sep = '', $seplocation = '' ) {
-		md_log( __FUNCTION__ );
+		// md_log( __FUNCTION__ );
 		global $posts;
 		// @todo: is supported post type
 		if ( ! is_single() && ! is_page() ) {
@@ -1609,7 +1611,29 @@ class Add_Meta_Tags {
 			),
 			'objects'
 		);
+
+		/**
+		 * Modify the list of registered post types. The array contains the non-built-in post types that have
+		 * public = true and show_ui = true.
+		 *
+		 * @param array $registered_post_types Array of post type objects
+		 */
 		return apply_filters( 'add_meta_tags_registered_post_types', $registered_post_types );
+	}
+
+
+	/**
+	 * Small helper function to indicate if valid custom post types are present. Aids in options panel creation.
+	 *
+	 * @return bool
+	 */
+	public function valid_custom_post_types_are_present() {
+		$registered_post_types = $this->get_registered_post_types();
+		if ( ! is_array( $registered_post_types ) || empty( $registered_post_types ) ) {
+			return false;
+		} else {
+			return true;
+		}
 	}
 
 
@@ -1648,7 +1672,6 @@ class Add_Meta_Tags {
 		$desc = preg_replace( '/( +)/', ' ', $desc );
 		return trim( $desc );
 	}
-
 
 
 }
