@@ -83,13 +83,6 @@ class Add_Meta_Tags {
 	 */
 	private $options_key = 'add_meta_tags_opts';
 
-	/**
-	 * Option id/value pairs for every option are stored here..
-	 *
-	 * @todo: unused?
-	 * @var array
-	 */
-	// private $option_values = array();
 
 	/**
 	 * Slug for this class.
