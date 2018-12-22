@@ -143,6 +143,20 @@ class Add_Meta_Tags {
 
 
 	/**
+	 * Stores the defaults for singular options
+	 *
+	 * @var array
+	 */
+	private $default_singular_options = array(
+		'mt_seo_title'            => false,
+		'mt_seo_description'      => false,
+		'mt_seo_keywords'         => false,
+		'mt_seo_google_news_meta' => false,
+		'mt_seo_meta'             => false,
+	);
+
+
+	/**
 	 * Add_Meta_Tags constructor.
 	 *
 	 * @theMikeD DONE
@@ -1005,7 +1019,7 @@ class Add_Meta_Tags {
 	 */
 	public function get_enabled_singular_options( $post_type ) {
 		$options  = get_option( $this->options_key );
-		$defaults = $this->get_default_singular_options();
+		$defaults = $this->default_singular_options;
 
 		$retrieved = array();
 		if ( $this->is_supported_post_type( $post_type ) ) {
@@ -1018,22 +1032,6 @@ class Add_Meta_Tags {
 			}
 		}
 		return wp_parse_args( $retrieved, $defaults );
-	}
-
-
-	/**
-	 * Gets the default settings for singular pages.
-	 *
-	 * @return array
-	 */
-	public function get_default_singular_options() {
-		return array(
-			'mt_seo_title'            => false,
-			'mt_seo_description'      => false,
-			'mt_seo_keywords'         => false,
-			'mt_seo_google_news_meta' => false,
-			'mt_seo_meta'             => false,
-		);
 	}
 
 
