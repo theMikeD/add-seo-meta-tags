@@ -141,16 +141,21 @@ class Add_Meta_Tags {
 	 * @theMikeD Pass 1
 	 */
 	public function init() {
+        // Admin hooks
+		// Loaded automatically
+		add_action( 'admin_menu', array( $this, 'add_options_panel' ) );
+		add_action( 'admin_init', array( $this, 'register_settings' ) );
+		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_scripts_and_styles' ) );
+		add_action( 'add_meta_boxes', array( $this, 'add_meta_box' ), 10, 2 );
+
 		add_action( 'save_page', array( $this, 'save_singular_meta' ) );
 		add_action( 'save_post', array( $this, 'save_singular_meta' ) );
-		add_action( 'admin_menu', array( $this, 'add_options_panel' ) );
-		add_action( 'add_meta_boxes', array( $this, 'add_meta_box' ), 10, 2 );
+
+        // Front end hooks
 		add_action( 'wp_head', array( $this, 'do_meta_tags' ), 0 );
-		add_action( 'admin_head', array( $this, 'do_inline_styles' ) );
 		add_filter( 'pre_get_document_title', array( $this, 'filter_the_title' ), 1, 3 );
-		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
-		add_action( 'admin_init', array( $this, 'register_settings' ) );
-		load_plugin_textdomain( 'add-meta-tags' );
+
+		load_plugin_textdomain( 'add-meta-tags', false, basename( dirname( __FILE__ ) ) . '/languages' );
 	}
 
 
@@ -159,24 +164,26 @@ class Add_Meta_Tags {
 	 *
 	 * @theMikeD Pass 1
 	 */
-	public function enqueue_scripts() {
+	public function enqueue_admin_scripts_and_styles() {
 		global $pagenow;
-		$supported_post_types = $this->get_stored_post_types();
+		$supported_post_types = $this->get_supported_post_types();
 
 		if ( in_array( $pagenow, array( 'post.php', 'post-new.php' ), true )
 			&& in_array( get_post_type(), $supported_post_types, true ) ) {
+
+			add_action( 'admin_head', array( $this, 'do_inline_styles' ) );
+
 			wp_register_script( 'add-meta-tags', plugins_url( 'js/add-meta-tags.js', __FILE__ ), array( 'jquery' ), '2.0.0', true );
+			wp_enqueue_script( 'add-meta-tags' );
 
 			/**
 			 * Filter the max length of the description. Result is converted to an absint.
 			 *
-			 * @param int Default max length of the SEO description field
+			 * @param int Max length of the SEO description field
 			 */
 			$max_desc_length = absint( apply_filters( 'amt_desc_value', $this->max_desc_length ) );
-
 			$amt_values = array( 'max_desc_length' => $max_desc_length );
 			wp_localize_script( 'add-meta-tags', 'amt_values', $amt_values );
-			wp_enqueue_script( 'add-meta-tags' );
 		}
 	}
 
@@ -343,7 +350,7 @@ class Add_Meta_Tags {
 		$registered_post_types = $this->get_registered_post_types();
 
 		// This gets a normal array, but validate_checkbox expects a hash. If a CPT is in this this it's an implicit true.
-		$saved_post_types = $this->get_stored_post_types( true );
+		$saved_post_types = $this->get_supported_post_types( true );
 
 		if ( ! is_array( $registered_post_types ) || empty( $registered_post_types ) ) {
 			return;
@@ -1494,7 +1501,7 @@ class Add_Meta_Tags {
 	 * @return bool  true if supplied post type is supported; false otherwise.
 	 */
 	public function is_supported_post_type( $post_type ) {
-		$supported = $this->get_stored_post_types();
+		$supported = $this->get_supported_post_types();
 		return in_array( $post_type, $supported, true );
 	}
 
@@ -1508,7 +1515,7 @@ class Add_Meta_Tags {
 	 *                              If false, return the post type names as a simple array.
 	 * @return array                Array or hash of post type names.
 	 */
-	public function get_stored_post_types( $return_hash = false ) {
+	public function get_supported_post_types( $return_hash = false ) {
 		$stored_options = $this->get_saved_options();
 
 		if ( ! isset( $stored_options['custom_post_types'] ) || empty( $stored_options['custom_post_types'] ) ) {
