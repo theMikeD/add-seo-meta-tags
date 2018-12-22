@@ -688,7 +688,6 @@ class Add_Meta_Tags {
 		echo wp_kses( "<li><input type='checkbox' id='post_mt_seo_title' name='{$this->options_key}[post_options][mt_seo_title]' value='1' " . checked( '1', $checkbox_value, false ) . " /><label for='post_mt_seo_title'>" . __( 'Enable \'Title\'', 'add-meta-tags' ) . '</label></li>', self::get_kses_valid_tags__checkbox() );
 
 		$checkbox_value = self::validate_checkbox( $stored_options['post_options'], 'mt_seo_description' );
-		// md_log( 'Valid? ' . $checkbox_value );
 		echo wp_kses( "<li><input type='checkbox' id='post_mt_seo_description' name='{$this->options_key}[post_options][mt_seo_description]' value='1' " . checked( '1', $checkbox_value, false ) . " /><label for='post_mt_seo_description'>" . __( 'Enable \'Description\'', 'add-meta-tags' ) . '</label></li>', self::get_kses_valid_tags__checkbox() );
 
 		$checkbox_value = self::validate_checkbox( $stored_options['post_options'], 'mt_seo_keywords' );
@@ -775,7 +774,6 @@ class Add_Meta_Tags {
 		echo wp_kses( "<li><input type='checkbox' id='page_mt_seo_title' name='{$this->options_key}[page_options][mt_seo_title]' value='1' " . checked( '1', $checkbox_value, false ) . " /><label for='page_mt_seo_title'>" . __( 'Enable \'Title\'', 'add-meta-tags' ) . '</label></li>', self::get_kses_valid_tags__checkbox() );
 
 		$checkbox_value = self::validate_checkbox( $stored_options['page_options'], 'mt_seo_description' );
-		// md_log( 'Valid? ' . $checkbox_value );
 		echo wp_kses( "<li><input type='checkbox' id='page_mt_seo_description' name='{$this->options_key}[page_options][mt_seo_description]' value='1' " . checked( '1', $checkbox_value, false ) . " /><label for='page_mt_seo_description'>" . __( 'Enable \'Description\'', 'add-meta-tags' ) . '</label></li>', self::get_kses_valid_tags__checkbox() );
 
 		$checkbox_value = self::validate_checkbox( $stored_options['page_options'], 'mt_seo_keywords' );
@@ -837,12 +835,25 @@ class Add_Meta_Tags {
 	 * @theMikeD Pass 1
 	 *
 	 * @param WP_Post $post      Post object.
-	 * @param string  $meta_box  Unused; kept for compatibility.
 	 */
-	public function do_meta_box( $post, $meta_box ) {
+	public function do_meta_box( $post ) {
 		global $post_type;
-		// $this->mt_seo_fields = apply_filters( 'mt_seo_fields', $this->mt_seo_fields, $post, $meta_box );
-		foreach ( (array) $this->mt_seo_fields as $field_name => $field_data ) {
+
+		// Bail if this is not a supported post type
+		if ( ! $this->is_supported_post_type( $post_type ) ) {
+			return;
+		}
+
+		/**
+		 * Filter the meta box fields and their labels.
+		 *
+		 * @param array $this->mt_seo_fields  The valid field names and labels
+		 * @param WP_Post object $post        The post object being considered.
+		 */
+		$meta_fields = apply_filters( 'mt_seo_fields', $this->mt_seo_fields, $post );
+
+		// Set each of the valid meta field names to their respective values from the db
+		foreach ( (array) $meta_fields as $field_name => $field_data ) {
 			${$field_name} = (string) get_post_meta( $post->ID, $field_name, true );
 
 			/*
@@ -864,37 +875,13 @@ class Add_Meta_Tags {
 			*/
 		}
 
-		$options = $this->get_saved_options();
+		$global_values = $this->get_enabled_singular_options( $post_type );
 
-		// @todo confirm this yikes
-		$global_values = null;
-		if ( stristr( $post_type, 'page' ) ) {
-			$global_values = $options['page_options'];
-		} elseif ( stristr( $post_type, 'post' ) ) {
-			$global_values = $options['post_options'];
+		// Set up the title.
+		$title = '';
+		if ( '' !== $mt_seo_title ) {
+			$title = str_replace( '%title%', get_the_title(), $mt_seo_title );
 		}
-
-		// @todo: make this a method and use it in init too
-		if ( ! is_array( $global_values ) ) {
-			$global_values = array(
-				'mt_seo_title'            => true,
-				'mt_seo_description'      => true,
-				'mt_seo_keywords'         => true,
-				'mt_seo_meta'             => true,
-				'mt_seo_google_news_meta' => true,
-			);
-		}
-
-		// Confirm the array contains only booleans.
-		$global_values = $this->make_array_values_boolean( $global_values );
-
-		/*
-		This code is never false because $mt_seo_title is not set
-		$title = ( '' == $mt_seo_title ) ? get_the_title() : $mt_seo_title;
-		And so neither does this code
-		$title = str_replace( '%title%', get_the_title(), $title );
-		*/
-		$title = get_the_title();
 
 		// Make the preview area.
 		echo wp_kses(

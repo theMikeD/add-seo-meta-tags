@@ -78,19 +78,22 @@
 			var t  = this,
 			$title = $( '#mt_seo_title' );
 
-			if ( ! $title.length ) {
-				return;
-			}
+			var limit = $title.attr( 'data-limit' ) || amt_values.max_title_length;
 
 			// The title, taken from the post edit screen.
 			var originalTitle = $( '#title' ).val();
 
-			// If the placeholder for the page title is used, sub that in before counting.
-			var count = $title.val().replace( '%title%', originalTitle ).length;
-
-			var limit = $title.attr( 'data-limit' ) || amt_values.max_title_length;
+			if ( $title.val() === '' ) {
+				// If the title text entry area is blank, then we use the page title
+				$( "#mt_snippet .title" ).html( jQuery( '<p>' + originalTitle + '</p>' ).text() );
+				var count = originalTitle.length;
+			} else {
+				// Otherwise, use what we have after subbing in teh page title for hte %title% placeholder
+				$( "#mt_snippet .title" ).html( jQuery( '<p>' + $title.val().replace( '%title%', originalTitle ).substring( 0, limit ) + '</p>' ).text() );
+				// If the placeholder for the page title is used, sub that in before counting.
+				var count = $title.val().replace( '%title%', originalTitle ).length;
+			}
 			$title.siblings( '.mt_counter' ).find( '.count' ).replaceWith( t.updateCounter( count, limit ) );
-			$( "#mt_snippet .title" ).html( jQuery( '<p>' + $title.val().replace( '%title%', originalTitle ).substring( 0, limit ) + '</p>' ).text() );
 		},
 
 		/**
