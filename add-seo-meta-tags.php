@@ -22,6 +22,7 @@ What's new
 *  Options page and meta box instructions text is clarified
 *  So much wp_kses()
 *  New filters
+*  Removed the reset button on the options panel. Too dangerous.
 
 What's the same
 1. Saved option names
@@ -44,10 +45,12 @@ limitations under the License.
 
 ---
 
-@todo: change filter name from amt_desc_value to amt_max_description_length
 @todo add message about tags and cats from old single entry options page to meta box
 @todo: looks like this applies automatically to CPT that are hidden, such as with seo-auto-linker plugin
 @todo: revisit the post types this applies to and add a filter for them
+
+Things I'd like to do but would be breaking changes
+@todo: change filter names to be more descriptive. ex.: amt_desc_value to amt_max_description_length
 
 */
 
@@ -66,21 +69,21 @@ class Add_Meta_Tags {
 	 *
 	 * Container for the SEO content and descriptive text for per-page entries
 	 */
-	public $mt_seo_fields = array();
+	private $mt_seo_fields = array();
 
 	/**
 	 * The maximum length for the description field. Filterable via amt_desc_value
 	 *
 	 * @var int
 	 */
-	public $max_desc_length = 140;
+	private $max_desc_length = 140;
 
 	/**
 	 * The maximum length for the SEO title. Filterable via amt_title_length()
 	 *
 	 * @var int
 	 */
-	public $max_title_length = 70;
+	private $max_title_length = 70;
 
 	/**
 	 * The option key used to save and retrieve our settings in the options table
@@ -120,12 +123,28 @@ class Add_Meta_Tags {
 	 */
 	private $excerpt_min_length = 150;
 
+	/**
+	 * The string used for the options page name and admin menu item.
+	 *
+	 * @var string
+	 */
+	private $options_page_name = '';
+
+
+	/**
+	 * The string used for the admin menu item.
+	 *
+	 * @var string
+	 */
+	private $options_page_menu_name = '';
 
 
 	/**
 	 * Add_Meta_Tags constructor.
 	 *
-	 * @theMikeD Pass 1
+	 * @theMikeD DONE
+	 *
+	 * @return void
 	 */
 	public function __construct() {
 		add_action( 'init', array( $this, 'init' ) );
@@ -144,13 +163,15 @@ class Add_Meta_Tags {
 	/**
 	 * Initialize the required hooks
 	 *
-	 * @theMikeD Pass 1
+	 * @theMikeD DONE
+	 *
+	 * @return void
 	 */
 	public function init() {
 		// Admin hooks.
 		// Loaded automatically; shown in order of load.
 		add_action( 'admin_menu', array( $this, 'add_options_panel' ) );
-		add_action( 'admin_init', array( $this, 'register_settings' ) );
+		add_action( 'admin_init', array( $this, 'create_options_page_fields' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_scripts_and_styles' ) );
 		add_action( 'add_meta_boxes', array( $this, 'add_meta_box' ), 10, 2 );
 
@@ -162,13 +183,18 @@ class Add_Meta_Tags {
 		add_filter( 'pre_get_document_title', array( $this, 'filter_the_title' ), 1, 3 );
 
 		load_plugin_textdomain( 'add-meta-tags', false, basename( dirname( __FILE__ ) ) . '/languages' );
+
+		$this->options_page_name      = __( 'SEO Meta Tags Options', 'add-meta-tags' );
+		$this->options_page_menu_name = __( 'SEO Options', 'add-meta-tags' );
 	}
 
 
 	/**
-	 * Enqueue the required script and localize its values.
+	 * Enqueue the admin CSS and script, including setting up the script's localized values.
 	 *
-	 * @theMikeD Pass 1
+	 * @theMikeD DONE
+	 *
+	 * @return void
 	 */
 	public function enqueue_admin_scripts_and_styles() {
 		global $pagenow;
@@ -205,6 +231,11 @@ class Add_Meta_Tags {
 	}
 
 
+	/*******************************************************************************************************************
+	 * Methods related to the post edit meta box
+	 */
+
+
 	/**
 	 * Adds the post edit meta box for supported post types.
 	 *
@@ -214,12 +245,14 @@ class Add_Meta_Tags {
 	 *
 	 * @param string  $post_type  The post type of the current edit page.
 	 * @param WP_Post $post       The current post object.
+	 *
+	 * @return void
 	 */
 	public function add_meta_box( $post_type, $post ) {
 		if ( $this->is_supported_post_type( $post_type ) ) {
 			add_meta_box(
 				'mt_seo',
-				__( 'SEO Options', 'add-meta-tags' ),
+				$this->options_page_name,
 				array( $this, 'do_meta_box' ),
 				$post_type,
 				'normal'
@@ -228,15 +261,21 @@ class Add_Meta_Tags {
 	}
 
 
+	/*******************************************************************************************************************
+	 * Methods related to the Options screen.
+	 */
+
 	/**
 	 * Adds the options panel under Settings.
 	 *
-	 * @theMikeD Pass 1
+	 * @theMikeD DONE
+	 *
+	 * @return void
 	 */
 	public function add_options_panel() {
 		add_options_page(
-			__( 'SEO Meta Tags Settings', 'add-meta-tags' ),
-			__( 'SEO Meta Tags', 'add-meta-tags' ),
+			$this->options_page_name,
+			$this->options_page_menu_name,
 			'administrator',
 			$this->slug,
 			array( $this, 'do_options_page' )
@@ -247,16 +286,14 @@ class Add_Meta_Tags {
 	/**
 	 * Display the options page content.
 	 *
-	 * @theMikeD Pass 1
+	 * @theMikeD DONE
 	 *
-	 * @todo: use var for page title
-	 * @since      2.0.0
-	 * @return     void
+	 * @return void
 	 */
 	public function do_options_page() {
 		?>
 		<div class="wrap">
-			<h1><?php echo esc_html( 'SEO Meta Tags' ); ?></h1>
+			<h1><?php echo esc_html( $this->options_page_name ); ?></h1>
 			<form method="POST" action="options.php">
 				<?php settings_fields( $this->options_key ); ?>
 				<?php do_settings_sections( $this->slug ); ?>
@@ -268,28 +305,32 @@ class Add_Meta_Tags {
 
 
 	/**
-	 * Defines valid options.
+	 * Set up the options page fields and callbacks.
 	 *
-	 * @theMikeD Pass 1
+	 * @theMikeD DONE
 	 *
-	 * @since      2.0.0
-	 * @return     void
+	 * @return void
 	 */
-	public function register_settings() {
-		// Three steps to using the settings API.
-		// Step 1: register each setting. In our case we will be storing all options for this
-		// plugin as an array in a single entry in the options table, so we only need to call
-		// this once. This is why both values are the same.
+	public function create_options_page_fields() {
+		/*
+		 * Three steps to using the settings API.
+		 *
+		 * Step 1: register each setting. In our case we will be storing all options for this
+		 * plugin as an array in a single entry in the options table, so we only need to call
+		 * this once. This is why both values are the same.
+		 */
 		register_setting( $this->options_key, $this->options_key );
 
-		// Step 2: Create the settings section(s).
-		// This is for visual organization only, but at least one is needed.
+		/*
+		 * Step 2: Create the settings section(s).
+		 * This is for visual organization only, but at least one is needed.
+		 */
 		add_settings_section( $this->slug . '_site', __( 'Site Settings', 'add-meta-tags' ), array( $this, 'do_section_site' ), $this->slug );
 		add_settings_section( $this->slug . '_home', __( 'Homepage Settings', 'add-meta-tags' ), array( $this, 'do_section_home' ), $this->slug );
 		add_settings_section( $this->slug . '_single', __( 'Single Post Settings', 'add-meta-tags' ), array( $this, 'do_section_single' ), $this->slug );
 		add_settings_section( $this->slug . '_page', __( 'Page Settings', 'add-meta-tags' ), array( $this, 'do_section_page' ), $this->slug );
 		add_settings_section( $this->slug . '_notes', __( 'Notes on Other Pages', 'add-meta-tags' ), array( $this, 'do_section_notes' ), $this->slug );
-		// add_settings_section( $this->slug . '_reset', __( 'Reset these settings', 'add-meta-tags' ), array( $this, 'do_section_reset' ), $this->slug );
+
 		/*
 		Step 3: For each option to be saved, add the settings GUI and callback to the
 		appropriate section. One of these for every setting item in our array.
@@ -354,7 +395,6 @@ class Add_Meta_Tags {
 			$this->slug,
 			$this->slug . '_notes'
 		);
-
 	}
 
 
