@@ -179,8 +179,8 @@ class Add_Meta_Tags {
 
 			add_action( 'admin_head', array( $this, 'do_inline_styles' ) );
 
-			wp_register_script( 'add-meta-tags', plugins_url( 'js/add-meta-tags.js', __FILE__ ), array( 'jquery' ), '2.0.0', true );
-			wp_enqueue_script( 'add-meta-tags' );
+			wp_register_script( 'add-seo-meta-tags', plugins_url( 'js/add-seo-meta-tags.js', __FILE__ ), array( 'jquery' ), '2.0.0', true );
+			wp_enqueue_script( 'add-seo-meta-tags' );
 
 			/**
 			 * Filter the max length of the description. Result is converted to an absint.
@@ -200,7 +200,7 @@ class Add_Meta_Tags {
 				'max_desc_length'  => $max_desc_length,
 				'max_title_length' => $max_title_length,
 			);
-			wp_localize_script( 'add-meta-tags', 'amt_values', $values_to_send );
+			wp_localize_script( 'add-seo-meta-tags', 'amt_values', $values_to_send );
 		}
 	}
 
