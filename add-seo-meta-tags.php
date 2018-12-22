@@ -7,23 +7,28 @@ Version: 2.0.0
 Author: George Notaras, Automattic, @theMikeD
 License: Apache License, Version 2.0
 
-This is a significantly updated version of the significantly modified version of the add-meta-tags plugin.
+This is a rewriteen version of the significantly modified version of the add-meta-tags plugin. The
+rewrite was done to bring the code in line with current best practices and standards.
 
 What's new
-1. Most if not all method and property names are different
-2. Dropped checks for WP < v2.3
-3. Updated function calls to use modern functions and filters (such as wp_head -> pre_get_document_title)
-4. Clean phpcs except for some commented code
-5. Plugin file name is different
-6. Plugin repo name is different (and more accurate now)
-7. Options pages, strings, meta boxes and so on are all updated and more accurate
-8. So much wp_kses()
-9. New filters
+*  Most if not all method and property names are different
+*  Dropped checks for WP < v2.3
+*  Updated function calls to use modern functions and filters (such as wp_head -> pre_get_document_title)
+*  Clean phpcs
+*  Plugin file name is different (and more accurate now)
+*  Plugin name as it appears in the Plugin list is different (and more accurate now)
+*  Plugin menu name and Options page name is different (and more accurate now)
+*  Options page and meta boxes are generated using proper APIs instead of raw HTML
+*  Options page and meta box instructions text is clarified
+*  So much wp_kses()
+*  New filters
 
 What's the same
 1. Saved option names
 2. Existing filters
 
+---
+Rewrite by @theMikeD
 ---
 Original plugin by George Notaras (http://www.g-loaded.eu).
 Additional contributions by Thorsten Ott, Josh Betz, and others.
