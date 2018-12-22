@@ -106,7 +106,6 @@ class Add_Meta_Tags {
 	 */
 	private $excerpt_max_length = 300;
 
-	// private  $desc_avg_length = 250;
 
 	/**
 	 * When the post excerpt is derived from post content, we require at least this many characters.
