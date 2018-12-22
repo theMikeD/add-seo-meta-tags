@@ -112,7 +112,7 @@ class Add_Meta_Tags {
 	 *
 	 * @var int
 	 */
-	private $desc_min_length = 150;
+	private $excerpt_min_length = 150;
 
 
 
@@ -825,7 +825,7 @@ class Add_Meta_Tags {
 		} else {
 			$excerpt_max_len = ( $excerpt_max_len ) ? (int) $excerpt_max_len : $this->excerpt_max_length;
 			// $desc_avg_length = ( $desc_avg_length ) ? (int) $desc_avg_length : $this->desc_avg_length;
-			$desc_min_length = ( $desc_min_length ) ? (int) $desc_min_length : $this->desc_min_length;
+			$desc_min_length = ( $desc_min_length ) ? (int) $desc_min_length : $this->excerpt_min_length;
 
 			$post_content = wp_strip_all_tags( strip_shortcodes( $posts[0]->post_content ) );
 			$post_excerpt = substr( $post_content, 0, $excerpt_max_len );

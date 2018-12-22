@@ -7,6 +7,7 @@ var counter = {
 		    $desc = $('#mt_seo_description');
 
 		if ( $title.length ) {
+			// @todo: this should be a localized value sent from the PHP file.
 			t.buildCounter( $title, 70, 'title' );
 
 			$title.keyup( function() {
