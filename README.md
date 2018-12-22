@@ -11,6 +11,8 @@ This operation is automatic, but the generated META tags can be fully customized
  
 
 #### Thanks
+The plugin was re-written by @theMikeD to bring the code in line with current best practices and standards.
+
 The following people have in one way or another contributed to this project:
 
 - Feedback and bug reporting:
