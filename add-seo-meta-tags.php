@@ -685,6 +685,10 @@ class Add_Meta_Tags {
 	public function do_post_options_html() {
 		$stored_options = $this->get_saved_options();
 
+		if ( ! isset( $stored_options['post_options'] ) ) {
+			$stored_options['post_options'] = $this->get_enabled_singular_options( 'post' );
+		}
+
 		echo wp_kses( '<fieldset>', array( 'fieldset' => true ) );
 		echo wp_kses( '<legend>Select the fields to enable on post and custom post type pages.</legend>', array( 'legend' => true ) );
 		echo wp_kses( '<ul>', $this->get_kses_valid_tags__list() );
@@ -772,6 +776,10 @@ class Add_Meta_Tags {
 	 */
 	public function do_page_options_html() {
 		$stored_options = $this->get_saved_options();
+
+		if ( ! isset( $stored_options['post_options'] ) ) {
+			$stored_options['post_options'] = $this->get_enabled_singular_options( 'page' );
+		}
 
 		echo wp_kses( '<fieldset>', array( 'fieldset' => true ) );
 		echo wp_kses( '<legend>Select the fields to enable on pages.</legend>', array( 'legend' => true ) );
@@ -996,23 +1004,38 @@ class Add_Meta_Tags {
 	 * @return array             Array of enabled options.
 	 */
 	public function get_enabled_singular_options( $post_type ) {
-		$options   = get_option( $this->options_key );
-		$retrieved = array(
-			'mt_seo_title'            => true,
-			'mt_seo_description'      => true,
-			'mt_seo_keywords'         => true,
-			'mt_seo_google_news_meta' => true,
-			'mt_seo_meta'             => true,
-		);
+		$options  = get_option( $this->options_key );
+		$defaults = $this->get_default_singular_options();
+
+		$retrieved = array();
 		if ( $this->is_supported_post_type( $post_type ) ) {
-			if ( 'page' === $post_type ) {
+			if ( 'page' === $post_type && is_array( $options ) && isset( $options['page_options'] ) && is_array( $options['page_options'] ) ) {
 				$retrieved = $options['page_options'];
-			} else {
+				$this->make_array_values_boolean( $retrieved );
+			} elseif ( is_array( $options ) && isset( $options['post_options'] ) && is_array( $options['post_options'] ) ) {
 				$retrieved = $options['post_options'];
+				$this->make_array_values_boolean( $retrieved );
 			}
 		}
-		return $this->make_array_values_boolean( $retrieved );
+		return wp_parse_args( $retrieved, $defaults );
 	}
+
+
+	/**
+	 * Gets the default settings for singular pages.
+	 *
+	 * @return array
+	 */
+	public function get_default_singular_options() {
+		return array(
+			'mt_seo_title'            => false,
+			'mt_seo_description'      => false,
+			'mt_seo_keywords'         => false,
+			'mt_seo_google_news_meta' => false,
+			'mt_seo_meta'             => false,
+		);
+	}
+
 
 	/**
 	 * Calls the save routine if required
