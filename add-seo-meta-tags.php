@@ -143,19 +143,13 @@ class Add_Meta_Tags {
 	public function init() {
 		add_action( 'save_page', array( $this, 'save_singular_meta' ) );
 		add_action( 'save_post', array( $this, 'save_singular_meta' ) );
-
-		add_action( 'admin_menu', array( $this, 'amt_add_pages' ) );
-
+		add_action( 'admin_menu', array( $this, 'add_options_panel' ) );
 		add_action( 'add_meta_boxes', array( $this, 'add_meta_box' ), 10, 2 );
-
 		add_action( 'wp_head', array( $this, 'do_meta_tags' ), 0 );
-		add_action( 'admin_head', array( $this, 'mt_seo_style' ) );
+		add_action( 'admin_head', array( $this, 'do_inline_styles' ) );
 		add_filter( 'pre_get_document_title', array( $this, 'filter_the_title' ), 1, 3 );
-
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
-
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
-
 		load_plugin_textdomain( 'add-meta-tags' );
 	}
 
@@ -215,7 +209,7 @@ class Add_Meta_Tags {
 	 *
 	 * @theMikeD Pass 1
 	 */
-	public function amt_add_pages() {
+	public function add_options_panel() {
 		add_options_page(
 			__( 'SEO Meta Tags Settings', 'add-meta-tags' ),
 			__( 'SEO Meta Tags', 'add-meta-tags' ),
@@ -1427,7 +1421,7 @@ class Add_Meta_Tags {
 	 * @todo: wp_kses for this?
 	 * @return void
 	 */
-	public function mt_seo_style() {
+	public function do_inline_styles() {
 		?>
 		<style type="text/css">
 			.wide-seo-box {	margin: 0; width: 98%; }
