@@ -7,8 +7,7 @@ var counter = {
 		    $desc = $('#mt_seo_description');
 
 		if ( $title.length ) {
-			// @todo: this should be a localized value sent from the PHP file.
-			t.buildCounter( $title, 70, 'title' );
+			t.buildCounter( $title, parseInt( amt_values.max_title_length ), 'title' );
 
 			$title.keyup( function() {
 				t.updateTitle();
@@ -50,7 +49,7 @@ var counter = {
 			return;
 
 		var count = $title.val().replace('%title%', originalTitle).length,
-		    limit = $title.attr('data-limit') || 70,
+		    limit = $title.attr('data-limit') || amt_values.max_title_length,
 		    originalTitle = $('#title').val();
 
 		$title.siblings( '.mt_counter' ).find( '.count' ).replaceWith( t.updateCounter( count, limit ) );

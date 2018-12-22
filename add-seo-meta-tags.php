@@ -44,7 +44,6 @@ limitations under the License.
 
 ---
 
-@todo: make title length a var
 @todo: change filter name from amt_desc_value to amt_max_description_length
 @todo add message about tags and cats from old single entry options page to meta box
 @todo: looks like this applies automatically to CPT that are hidden, such as with seo-auto-linker plugin
@@ -72,9 +71,16 @@ class Add_Meta_Tags {
 	/**
 	 * The maximum length for the description field. Filterable via amt_desc_value
 	 *
-	 * @var string
+	 * @var int
 	 */
 	public $max_desc_length = 140;
+
+	/**
+	 * The maximum length for the SEO title. Filterable via amt_title_length()
+	 *
+	 * @var int
+	 */
+	public $max_title_length = 70;
 
 	/**
 	 * The option key used to save and retrieve our settings in the options table
@@ -141,8 +147,8 @@ class Add_Meta_Tags {
 	 * @theMikeD Pass 1
 	 */
 	public function init() {
-        // Admin hooks
-		// Loaded automatically
+		// Admin hooks.
+		// Loaded automatically; shown in order of load.
 		add_action( 'admin_menu', array( $this, 'add_options_panel' ) );
 		add_action( 'admin_init', array( $this, 'register_settings' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_scripts_and_styles' ) );
@@ -151,7 +157,7 @@ class Add_Meta_Tags {
 		add_action( 'save_page', array( $this, 'save_singular_meta' ) );
 		add_action( 'save_post', array( $this, 'save_singular_meta' ) );
 
-        // Front end hooks
+		// Front end hooks.
 		add_action( 'wp_head', array( $this, 'do_meta_tags' ), 0 );
 		add_filter( 'pre_get_document_title', array( $this, 'filter_the_title' ), 1, 3 );
 
@@ -182,8 +188,19 @@ class Add_Meta_Tags {
 			 * @param int Max length of the SEO description field
 			 */
 			$max_desc_length = absint( apply_filters( 'amt_desc_value', $this->max_desc_length ) );
-			$amt_values = array( 'max_desc_length' => $max_desc_length );
-			wp_localize_script( 'add-meta-tags', 'amt_values', $amt_values );
+
+			/**
+			 * Filter the max length of the title. Result is converted to an absint.
+			 *
+			 * @param int Max length of the SEO title field
+			 */
+			$max_title_length = absint( apply_filters( 'amt_title_length', $this->max_title_length ) );
+
+			$values_to_send = array(
+				'max_desc_length'  => $max_desc_length,
+				'max_title_length' => $max_title_length,
+			);
+			wp_localize_script( 'add-meta-tags', 'amt_values', $values_to_send );
 		}
 	}
 
@@ -1252,7 +1269,7 @@ class Add_Meta_Tags {
 			$this->form_get_kses_valid_tags__metabox()
 		);
 		echo wp_kses(
-			'<a href="#" class="title">' . substr( $title, 0, 70 ) . '</a><br>',
+			'<a href="#" class="title">' . substr( $title, 0, $this->max_title_length ) . '</a><br>',
 			$this->form_get_kses_valid_tags__metabox()
 		);
 		echo wp_kses(
