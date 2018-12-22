@@ -875,6 +875,16 @@ class Add_Meta_Tags {
 			return;
 		}
 
+		$global_values = $this->get_enabled_singular_options( $post_type );
+
+		// Show message if nothing is enabled, then bail
+		if ( ! in_array( '1', $global_values, true ) ) {
+			echo wp_kses(
+				'<p>' . __( 'No SEO fields were enabled. Please enable post fields in the Meta Tags options page', 'add-meta-tags' ) . '</p>',
+				$this->get_kses_valid_tags__message()
+			);
+			return;
+		}
 		/**
 		 * Filter the meta box fields and their labels.
 		 *
@@ -906,8 +916,6 @@ class Add_Meta_Tags {
 			*/
 		}
 
-		$global_values = $this->get_enabled_singular_options( $post_type );
-
 		// Set up the title.
 		$title = '';
 		if ( '' !== $mt_seo_title ) { // @codingStandardsIgnoreLine: var is defined indirectly in foreach loop above
@@ -936,8 +944,7 @@ class Add_Meta_Tags {
 			$this->form_get_kses_valid_tags__metabox()
 		);
 
-		$tabindex       = 5000;
-		$tabindex_start = 5000;
+		$tabindex = 5000;
 		foreach ( (array) $this->mt_seo_fields as $field_name => $field_data ) {
 			if ( empty( $global_values[ $field_name ] ) ) {
 				continue;
@@ -968,12 +975,6 @@ class Add_Meta_Tags {
 			$tabindex++;
 		}
 
-		if ( $tabindex === $tabindex_start ) {
-			echo wp_kses(
-				'<p>' . __( 'No SEO fields were enabled. Please enable post fields in the Meta Tags options page', 'add-meta-tags' ) . '</p>',
-				$this->get_kses_valid_tags__message()
-			);
-		}
 		wp_nonce_field( 'mt-seo', 'mt_seo_nonce', false );
 
 		// @todo: Do we care about yoast?
@@ -1682,6 +1683,9 @@ class Add_Meta_Tags {
 		return $checkbox_value;
 	}
 
+	// private function get_link_to_options_page() {
+	// return ''
+	// }
 }
 
 $mt_add_meta_tags = new Add_Meta_Tags();
