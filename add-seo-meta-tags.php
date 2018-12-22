@@ -24,6 +24,7 @@ What's new
  * New filters
  * Removed the reset button on the options panel. Too dangerous.
  * Removes hardcoded strings in the JS and replaces them with localized strings.
+ * JS counter for title now works correctly when a blank title is in place
 
 What's the same
 1. Saved option names
@@ -625,7 +626,9 @@ class Add_Meta_Tags {
 	/**
 	 * Create and echo the descriptive text for the homepage options section.
 	 *
-	 * @theMikeD Pass 1
+	 * @theMikeD DONE
+	 *
+	 * @return void
 	 */
 	public function do_section_home() {
 		echo wp_kses( 'These options are for the homepage only.', self::get_kses_valid_tags__message() );
@@ -663,7 +666,9 @@ class Add_Meta_Tags {
 	/**
 	 * Create and echo the descriptive text for the single post and custom post type options section.
 	 *
-	 * @theMikeD Pass 1
+	 * @theMikeD DONE
+	 *
+	 * @return void
 	 */
 	public function do_section_post() {
 		echo wp_kses( 'These options are for posts and any custom post types that are enabled (below).', self::get_kses_valid_tags__message() );
@@ -749,7 +754,9 @@ class Add_Meta_Tags {
 	/**
 	 * Create and echo the descriptive text for the page options section.
 	 *
-	 * @theMikeD Pass 1
+	 * @theMikeD DONE
+	 *
+	 * @return void
 	 */
 	public function do_section_page() {
 		echo wp_kses( 'These options are for pages.', self::get_kses_valid_tags__message() );
@@ -793,7 +800,9 @@ class Add_Meta_Tags {
 	/**
 	 * Create and echo the descriptive text for the Notes section.
 	 *
-	 * @theMikeD Pass 1
+	 * @theMikeD DONE
+	 *
+	 * @return void
 	 */
 	public function do_section_notes() {
 		echo wp_kses( 'Notes on other specific page types.', self::get_kses_valid_tags__message() );
@@ -879,25 +888,13 @@ class Add_Meta_Tags {
 
 		// Set up the title.
 		$title = '';
-		if ( '' !== $mt_seo_title ) {
+		if ( '' !== $mt_seo_title ) { // @codingStandardsIgnoreLine: var is defined indirectly in foreach loop above
 			$title = str_replace( '%title%', get_the_title(), $mt_seo_title );
 		}
 
 		// Make the preview area.
 		echo wp_kses(
-			'<div class="form-field mt_seo_preview form_field">',
-			$this->form_get_kses_valid_tags__metabox()
-		);
-		echo wp_kses(
-			'<h4>Preview</h4>',
-			$this->form_get_kses_valid_tags__metabox()
-		);
-		echo wp_kses(
-			'<div class="mt-form-field-contents">',
-			$this->form_get_kses_valid_tags__metabox()
-		);
-		echo wp_kses(
-			'<div id="mt_snippet">',
+			'<div class="form-field mt_seo_preview form_field"><h4>Preview</h4><div class="mt-form-field-contents"><div id="mt_snippet">',
 			$this->form_get_kses_valid_tags__metabox()
 		);
 		echo wp_kses(
