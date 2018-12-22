@@ -237,827 +237,6 @@ class Add_Meta_Tags {
 	}
 
 
-	/*******************************************************************************************************************
-	 * Methods related to the post edit meta box
-	 */
-
-
-	/**
-	 * Adds the post edit meta box for supported post types.
-	 *
-	 * @theMikeD Pass 1
-	 *
-	 * @todo: confirm this works with only the specified post types
-	 *
-	 * @param string  $post_type  The post type of the current edit page.
-	 * @param WP_Post $post       The current post object.
-	 *
-	 * @return void
-	 */
-	public function add_meta_box( $post_type, $post ) {
-		if ( $this->is_supported_post_type( $post_type ) ) {
-			add_meta_box(
-				'mt_seo',
-				$this->options_page_name,
-				array( $this, 'do_meta_box' ),
-				$post_type,
-				'normal'
-			);
-		}
-	}
-
-
-	/*******************************************************************************************************************
-	 * Methods related to the Options screen.
-	 */
-
-	/**
-	 * Adds the options panel under Settings.
-	 *
-	 * @theMikeD DONE
-	 *
-	 * @return void
-	 */
-	public function add_options_panel() {
-		add_options_page(
-			$this->options_page_name,
-			$this->options_page_menu_name,
-			'administrator',
-			$this->slug,
-			array( $this, 'do_options_page' )
-		);
-	}
-
-
-	/**
-	 * Display the options page content.
-	 *
-	 * @theMikeD DONE
-	 *
-	 * @return void
-	 */
-	public function do_options_page() {
-		?>
-		<div class="wrap">
-			<h1><?php echo esc_html( $this->options_page_name ); ?></h1>
-			<form method="POST" action="options.php">
-				<?php settings_fields( $this->options_key ); ?>
-				<?php do_settings_sections( $this->slug ); ?>
-				<?php submit_button(); ?>
-			</form>
-		</div>
-		<?php
-	}
-
-
-	/**
-	 * Set up the options page fields and callbacks.
-	 *
-	 * @theMikeD DONE
-	 *
-	 * @return void
-	 */
-	public function create_options_page_fields() {
-		/*
-		 * Three steps to using the settings API.
-		 *
-		 * Step 1: register each setting. In our case we will be storing all options for this
-		 * plugin as an array in a single entry in the options table, so we only need to call
-		 * this once. This is why both values are the same.
-		 */
-		register_setting( $this->options_key, $this->options_key );
-
-		/*
-		 * Step 2: Create the settings section(s).
-		 * This is for visual organization only, but at least one is needed.
-		 */
-		add_settings_section( $this->slug . '_site', __( 'Site-Wide Settings', 'add-meta-tags' ), array( $this, 'do_section_site' ), $this->slug );
-		add_settings_section( $this->slug . '_home', __( 'Homepage Settings', 'add-meta-tags' ), array( $this, 'do_section_home' ), $this->slug );
-		add_settings_section( $this->slug . '_single', __( 'Post Settings', 'add-meta-tags' ), array( $this, 'do_section_single' ), $this->slug );
-		add_settings_section( $this->slug . '_page', __( 'Page Settings', 'add-meta-tags' ), array( $this, 'do_section_page' ), $this->slug );
-		add_settings_section( $this->slug . '_notes', __( 'Notes on Other Pages', 'add-meta-tags' ), array( $this, 'do_section_notes' ), $this->slug );
-
-		/*
-		Step 3: For each option to be saved, add the settings GUI and callback to the
-		appropriate section. One of these for every setting item in our array.
-		*/
-
-		// Site options.
-		add_settings_field(
-			'site_wide_meta',
-			__( 'Site-wide META tags', 'add-meta-tags' ),
-			array( $this, 'do_site_wide_meta_html' ),
-			$this->slug,
-			$this->slug . '_site'
-		);
-
-		// Home page options.
-		add_settings_field(
-			'site_description',
-			__( 'Homepage Description', 'add-meta-tags' ),
-			array( $this, 'do_site_description_html' ),
-			$this->slug,
-			$this->slug . '_home'
-		);
-		add_settings_field(
-			'site_keywords',
-			__( 'Homepage Keywords', 'add-meta-tags' ),
-			array( $this, 'do_site_keywords_html' ),
-			$this->slug,
-			$this->slug . '_home'
-		);
-
-		// Post/Page Single options. These checkboxes are added together as a fieldset.
-		add_settings_field(
-			'mt_seo_title',
-			__( 'Enabled Sections', 'add-meta-tags' ),
-			array( $this, 'do_post_options_html' ),
-			$this->slug,
-			$this->slug . '_single'
-		);
-		// CPT selectors. These checkboxes are added together as a fieldset, but only if there are in fact custom post types..
-		if ( $this->valid_custom_post_types_are_present() ) {
-			add_settings_field(
-				'custom_post_types',
-				__( 'Enabled Custom Post Types', 'add-meta-tags' ),
-				array( $this, 'do_custom_post_types_html' ),
-				$this->slug,
-				$this->slug . '_single'
-			);
-		}
-
-		// Page selectors. These checkboxes are added together as a fieldset.
-		add_settings_field(
-			'page_options',
-			__( 'Enabled Sections', 'add-meta-tags' ),
-			array( $this, 'do_page_options_html' ),
-			$this->slug,
-			$this->slug . '_page'
-		);
-
-		// Notes for category archives.
-		add_settings_field(
-			'taxonomy_archive_notes',
-			__( 'Taxonomy Archives', 'add-meta-tags' ),
-			array( $this, 'do_taxonomy_archive_notes_html' ),
-			$this->slug,
-			$this->slug . '_notes'
-		);
-	}
-
-
-	/**
-	 * Displays the HTML form element for the site_wide_meta option in the admin options page.
-	 *
-	 * @theMikeD DONE
-	 *
-	 * @return void
-	 */
-	public function do_site_wide_meta_html() {
-		$stored_options = $this->get_saved_options();
-		echo wp_kses(
-			'<p>' . __( 'Provide the full XHTML code of META tags you would like to be included in <strong>every page of your site</strong>.', 'add-meta-tags' ) . '</p>',
-			self::get_kses_valid_tags__message()
-		);
-		echo wp_kses(
-			"<textarea name='{$this->options_key}[site_wide_meta]' class='code'>" . esc_textarea( stripslashes( $stored_options['site_wide_meta'] ) ) . '</textarea>',
-			self::get_kses_valid_tags__textarea()
-		);
-		echo wp_kses(
-			'<p><strong>' . __( 'Example', 'add-meta-tags' ) . '</strong>: <code>&lt;meta name="robots" content="index,follow" /&gt;</code></p>',
-			self::get_kses_valid_tags__message()
-		);
-	}
-
-
-	/**
-	 * Displays the HTML form element for the site_description option in the admin options page.
-	 *
-	 * @theMikeD DONE
-	 *
-	 * @return void
-	 */
-	public function do_site_description_html() {
-		$stored_options = $this->get_saved_options();
-		echo wp_kses( '<p>' . __( 'This text will be used in the "description" meta tag on the <strong>homepage only</strong>.</p><p>If this is left empty, then description from the Tagline (found on the General Options page) will be used.', 'add-meta-tags' ) . '</p>', self::get_kses_valid_tags__message() );
-		echo wp_kses( "<textarea name='{$this->options_key}[site_description]' class='code' id='mt_seo_description'>" . esc_textarea( stripslashes( $stored_options['site_description'] ) ) . '</textarea>', self::get_kses_valid_tags__textarea() );
-	}
-
-
-	/**
-	 * Displays the HTML form element for the site_keywords option in the admin options page.
-	 *
-	 * @theMikeD DONE
-	 *
-	 * @return void
-	 */
-	public function do_site_keywords_html() {
-		$stored_options = $this->get_saved_options();
-		echo wp_kses( '<p>' . __( 'These keywords will be used for the "keywords" meta tag on the <strong>homepage only</strong>. Provide a comma-delimited list of keywords.</p><p>If this field is left <strong>empty</strong>, then all of your blog\'s categories, except for the "Uncategorized" category, will be used as keywords for the "keywords" meta tag.', 'add-meta-tags' ) . '</p>', self::get_kses_valid_tags__message() );
-		echo wp_kses( "<textarea name='{$this->options_key}[site_keywords]' class='code'>" . esc_textarea( stripslashes( $stored_options['site_keywords'] ) ) . '</textarea>', self::get_kses_valid_tags__textarea() );
-	}
-
-
-	/**
-	 * Displays the HTML form element for the do_mt_seo_title_html option in the admin options page.
-	 *
-	 * @theMikeD DONE
-	 *
-	 * @return void
-	 */
-	public function do_post_options_html() {
-		$stored_options = $this->get_saved_options();
-
-		echo wp_kses( '<fieldset>', array( 'fieldset' => true ) );
-		echo wp_kses( '<legend>Select the fields to enable on post and custom post type pages.</legend>', array( 'legend' => true ) );
-		echo wp_kses( '<ul>', $this->get_kses_valid_tags__list() );
-
-		$checkbox_value = self::validate_checkbox( $stored_options['post_options'], 'mt_seo_title' );
-		echo wp_kses( "<li><input type='checkbox' id='post_mt_seo_title' name='{$this->options_key}[post_options][mt_seo_title]' value='1' " . checked( '1', $checkbox_value, false ) . " /><label for='post_mt_seo_title'>" . __( 'Enable \'Title\'', 'add-meta-tags' ) . '</label></li>', self::get_kses_valid_tags__checkbox() );
-
-		$checkbox_value = self::validate_checkbox( $stored_options['post_options'], 'mt_seo_description' );
-		// md_log( 'Valid? ' . $checkbox_value );
-		echo wp_kses( "<li><input type='checkbox' id='post_mt_seo_description' name='{$this->options_key}[post_options][mt_seo_description]' value='1' " . checked( '1', $checkbox_value, false ) . " /><label for='post_mt_seo_description'>" . __( 'Enable \'Description\'', 'add-meta-tags' ) . '</label></li>', self::get_kses_valid_tags__checkbox() );
-
-		$checkbox_value = self::validate_checkbox( $stored_options['post_options'], 'mt_seo_keywords' );
-		echo wp_kses( "<li><input type='checkbox' id='post_mt_seo_keywords' name='{$this->options_key}[post_options][mt_seo_keywords]' value='1' " . checked( '1', $checkbox_value, false ) . " /><label for='post_mt_seo_keywords'>" . __( 'Enable \'Keywords\'', 'add-meta-tags' ) . '</label></li>', self::get_kses_valid_tags__checkbox() );
-
-		$checkbox_value = self::validate_checkbox( $stored_options['post_options'], 'mt_seo_meta' );
-		echo wp_kses( "<li><input type='checkbox' id='post_mt_seo_meta' name='{$this->options_key}[post_options][mt_seo_meta]' value='1' " . checked( '1', $checkbox_value, false ) . " /><label for='post_mt_seo_meta'>" . __( 'Enable \'Meta Tags\'', 'add-meta-tags' ) . '</label></li>', self::get_kses_valid_tags__checkbox() );
-
-		$checkbox_value = self::validate_checkbox( $stored_options['post_options'], 'mt_seo_google_news_meta' );
-		echo wp_kses( "<li><input type='checkbox' id='post_mt_seo_google_news_meta' name='{$this->options_key}[post_options][mt_seo_google_news_meta]' value='1' " . checked( '1', $checkbox_value, false ) . " /><label for='post_mt_seo_google_news_meta'>" . __( 'Enable \'Google News Meta Tags\'', 'add-meta-tags' ) . '</label></li>', self::get_kses_valid_tags__checkbox() );
-
-		echo wp_kses( '</ul>', $this->get_kses_valid_tags__list() );
-		echo wp_kses( '</fieldset>', array( 'fieldset' => true ) );
-	}
-
-
-	/**
-	 * Displays the HTML form element for the custom_post_types option in the admin options page if
-	 * any valid custom post types are present.
-	 *
-	 * @theMikeD DONE
-	 *
-	 * @return void
-	 */
-	public function do_custom_post_types_html() {
-
-		if ( ! $this->valid_custom_post_types_are_present() ) {
-			return;
-		}
-
-		echo wp_kses( '<fieldset>', array( 'fieldset' => true ) );
-		echo wp_kses(
-			'<legend>' . __( 'You can enable the Post Settings for custom post types too. Use the checkboxes below to do so.', 'add-meta-tags' ) . '</legend>',
-			array(
-				'legend' => true,
-				'code'   => true,
-				'br'     => true,
-				'strong' => true,
-			)
-		);
-		echo wp_kses( '<ul>', self::get_kses_valid_tags__list() );
-
-		$registered_post_types = $this->get_registered_post_types();
-		$supported_post_types  = $this->get_supported_post_types( true );
-
-		foreach ( $registered_post_types as $post_type ) {
-			$checkbox_value = self::validate_checkbox( $supported_post_types, $post_type->name );
-			echo wp_kses(
-				"<li><input type='checkbox' id='post_type_{$post_type->name}' name='{$this->options_key}[custom_post_types][" . esc_attr( $post_type->name ) . "]' value='1' " . checked( '1', $checkbox_value, false ) . " /><label for='post_type_{$post_type->name}'>" . __( 'Apply Post Settings to ', 'add-meta-tags' ) . wp_strip_all_tags( $post_type->labels->name ) . ' (<code>' . wp_strip_all_tags( $post_type->name ) . '</code>)</label></li>',
-				self::get_kses_valid_tags__checkbox()
-			);
-		}
-
-		echo wp_kses( '</ul>', self::get_kses_valid_tags__list() );
-		echo wp_kses( '</fieldset>', array( 'fieldset' => true ) );
-	}
-
-
-	/**
-	 * Displays the HTML form element for the page_options option in the admin options page.
-	 *
-	 * @theMikeD DONE
-	 *
-	 * @return void
-	 */
-	public function do_page_options_html() {
-		$stored_options = $this->get_saved_options();
-
-		echo wp_kses( '<fieldset>', array( 'fieldset' => true ) );
-		echo wp_kses( '<legend>Select the fields to enable on pages.</legend>', array( 'legend' => true ) );
-		echo wp_kses( '<ul>', $this->get_kses_valid_tags__list() );
-
-		$checkbox_value = self::validate_checkbox( $stored_options['page_options'], 'mt_seo_title' );
-		echo wp_kses( "<li><input type='checkbox' id='page_mt_seo_title' name='{$this->options_key}[page_options][mt_seo_title]' value='1' " . checked( '1', $checkbox_value, false ) . " /><label for='page_mt_seo_title'>" . __( 'Enable \'Title\'', 'add-meta-tags' ) . '</label></li>', self::get_kses_valid_tags__checkbox() );
-
-		$checkbox_value = self::validate_checkbox( $stored_options['page_options'], 'mt_seo_description' );
-		// md_log( 'Valid? ' . $checkbox_value );
-		echo wp_kses( "<li><input type='checkbox' id='page_mt_seo_description' name='{$this->options_key}[page_options][mt_seo_description]' value='1' " . checked( '1', $checkbox_value, false ) . " /><label for='page_mt_seo_description'>" . __( 'Enable \'Description\'', 'add-meta-tags' ) . '</label></li>', self::get_kses_valid_tags__checkbox() );
-
-		$checkbox_value = self::validate_checkbox( $stored_options['page_options'], 'mt_seo_keywords' );
-		echo wp_kses( "<li><input type='checkbox' id='page_mt_seo_keywords' name='{$this->options_key}[page_options][mt_seo_keywords]' value='1' " . checked( '1', $checkbox_value, false ) . " /><label for='page_mt_seo_keywords'>" . __( 'Enable \'Keywords\'', 'add-meta-tags' ) . '</label></li>', self::get_kses_valid_tags__checkbox() );
-
-		$checkbox_value = self::validate_checkbox( $stored_options['page_options'], 'mt_seo_meta' );
-		echo wp_kses( "<li><input type='checkbox' id='page_mt_seo_meta' name='{$this->options_key}[page_options][mt_seo_meta]' value='1' " . checked( '1', $checkbox_value, false ) . " /><label for='page_mt_seo_meta'>" . __( 'Enable \'Meta Tags\'', 'add-meta-tags' ) . '</label></li>', self::get_kses_valid_tags__checkbox() );
-
-		$checkbox_value = self::validate_checkbox( $stored_options['page_options'], 'mt_seo_google_news_meta' );
-		echo wp_kses( "<li><input type='checkbox' id='page_mt_seo_google_news_meta' name='{$this->options_key}[page_options][mt_seo_google_news_meta]' value='1' " . checked( '1', $checkbox_value, false ) . " /><label for='page_mt_seo_google_news_meta'>" . __( 'Enable \'Google News Meta Tags\'', 'add-meta-tags' ) . '</label></li>', self::get_kses_valid_tags__checkbox() );
-
-		echo wp_kses( '</ul>', $this->get_kses_valid_tags__list() );
-		echo wp_kses( '</fieldset>', array( 'fieldset' => true ) );
-	}
-
-
-	/**
-	 * Displays the HTML form element for the taxonomy_archive_notes option in the admin options page.
-	 *
-	 * @theMikeD DONE
-	 *
-	 * @return void
-	 */
-	public function do_taxonomy_archive_notes_html() {
-		echo wp_kses(
-			'<p>META tags are automatically added to Category, Tag, and Custom Taxonomy Archive pages as follows:</p>',
-			$this->get_kses_valid_tags__message()
-		);
-		echo wp_kses( '<ol>', $this->get_kses_valid_tags__list() );
-		echo wp_kses(
-			'<li>The term name is set as the "keywords" META tag.</li>',
-			$this->get_kses_valid_tags__list()
-		);
-		echo wp_kses(
-			'<li>If the term has a description, that description is set as the "description" META tag.</li>',
-			$this->get_kses_valid_tags__list()
-		);
-		echo wp_kses( '</ol>', $this->get_kses_valid_tags__list() );
-		echo wp_kses( '</p>', $this->get_kses_valid_tags__message() );
-	}
-
-
-
-
-	/*******************************************************************************************************************
-	 * Helper Methods.
-	 */
-
-
-	/**
-	 * Using the 'checked' function will fail if the option being checked is stored in an array and that array key doesn't
-	 * exist. This function will ensure that the value used to compare using 'checked' is always valid.
-	 *
-	 * @theMikeD DONE
-	 *
-	 * @param array  $stored_options        The array of options as retrieved from the database.
-	 * @param string $option_to_check       The particular option to check.
-	 * @return string
-	 */
-	private function validate_checkbox( $stored_options, $option_to_check ) {
-		$checkbox_value = '';
-		// The retrieval method ensures that the options retrieved are always an array but it doesn't hurt to check here.
-		if ( ! is_array( $stored_options ) ) {
-			return '';
-		}
-		if ( array_key_exists( $option_to_check, $stored_options ) && false !== $stored_options[ $option_to_check ] ) {
-			$checkbox_value = $stored_options[ $option_to_check ];
-		}
-		return $checkbox_value;
-	}
-
-
-	/**
-	 * Retrieves the options from the database and stores them for later use if not already stored.
-	 *
-	 * @theMikeD Pass 1
-	 *
-	 * @return array
-	 */
-	public function get_saved_options() {
-		if ( empty( $this->saved_options ) ) {
-			$saved_options = get_option( $this->options_key );
-			if ( ! is_array( $saved_options ) ) {
-				$saved_options = array();
-			}
-			$this->saved_options = $saved_options;
-		}
-		return $this->saved_options;
-	}
-
-
-	/**
-	 * Retrieves the enabled SEO options for singular pages, as defined on the main Settings page.
-	 *
-	 * @param string $post_type  Post type of current post.
-	 * @return array             Array of enabled options.
-	 */
-	public function get_enabled_singular_options( $post_type ) {
-		$options   = get_option( $this->options_key );
-		$retrieved = array(
-			'mt_seo_title'       => true,
-			'mt_seo_description' => true,
-			'mt_seo_keywords'    => true,
-			'mt_seo_meta'        => true,
-		);
-		if ( $this->is_supported_post_type( $post_type ) ) {
-			if ( 'page' === $post_type ) {
-				$retrieved = $options['page_options'];
-			} else {
-				$retrieved = $options['post_options'];
-			}
-		}
-		return $this->make_array_values_boolean( $retrieved );
-	}
-
-
-	/**
-	 * Gets the valid tags and attributes for use with <textarea> elements in the admin options page and meta boxes.
-	 *
-	 * @theMikeD Pass 1
-	 *
-	 * @return array
-	 */
-	private function get_kses_valid_tags__checkbox() {
-		return array(
-			'li'    => true,
-			'code'  => true,
-			'input' => array(
-				'name'    => true,
-				'checked' => true,
-				'type'    => true,
-				'value'   => true,
-				'id'      => true,
-			),
-		);
-	}
-
-
-	/**
-	 * Gets the valid tags and attributes for use with <textarea> elements in the admin options page and meta boxes.
-	 *
-	 * @theMikeD Pass 1
-	 *
-	 * @return array
-	 */
-	private function get_kses_valid_tags__list() {
-		return array(
-			'ul' => true,
-			'ol' => true,
-			'li' => true,
-		);
-	}
-
-	/**
-	 * Gets the valid tags and attributes for use with <textarea> elements in the admin options page and meta boxes.
-	 *
-	 * @theMikeD Pass 1
-	 *
-	 * @return array
-	 */
-	private function get_kses_valid_tags__textarea() {
-		return array(
-			'textarea' => array(
-				'name'     => true,
-				'class'    => true,
-				'tabindex' => true,
-				'id'       => true,
-			),
-		);
-	}
-
-
-	/**
-	 * Gets the valid tags and attributes for use with <input type='text'> elements in the admin options page and meta boxes.
-	 *
-	 * @theMikeD Pass 1
-	 *
-	 * @todo: unused?
-	 * @return array
-	 */
-	private function get_kses_valid_tags__text_input() {
-		return array(
-			'input' => array(
-				'type'     => true,
-				'class'    => true,
-				'tabindex' => true,
-				'name'     => true,
-				'id'       => true,
-				'value'    => true,
-			),
-		);
-	}
-
-
-	/**
-	 * Gets the valid tags and attributes for use with general messages in the admin options page and meta boxes.
-	 *
-	 * @theMikeD Pass 1
-	 * @return array
-	 */
-	private function get_kses_valid_tags__message() {
-		return array(
-			'strong' => true,
-			'p'      => true,
-			'code'   => true,
-			'em'     => true,
-		);
-	}
-
-
-	/**
-	 * Gets the valid tags and attributes for use with elements related to the meta box in the post/page edit screen.
-	 *
-	 * @theMikeD Pass 1
-	 *
-	 * @return array
-	 */
-	private function form_get_kses_valid_tags__metabox() {
-		return array(
-			'h4'    => true,
-			'br'    => true,
-			'a'     => array(
-				'href'  => true,
-				'class' => true,
-			),
-			'div'   => array(
-				'class' => true,
-				'id'    => true,
-			),
-			'span'  => array(
-				'class' => true,
-			),
-			'p'     => array(
-				'class' => true,
-			),
-			'label' => array(
-				'for' => true,
-			),
-		);
-	}
-
-
-	/**
-	 * Gets the valid tags and attributes for use with <meta> elements in page source.
-	 *
-	 * @theMikeD Pass 1
-	 *
-	 * @return array
-	 */
-	private function get_kses_valid_tags__metatags() {
-		return array(
-			'meta' => array(
-				'name'    => true,
-				'content' => true,
-			),
-		);
-	}
-
-
-	/**
-	 * Validate the entered string.
-	 *
-	 * @since      0.0.1
-	 *
-	 * @param      string $input   The string as entered by the user.
-	 * @return     string          The filtered string or empty if tests failed.
-	 */
-	public function validate_options( $input ) {
-		return $input;
-	}
-
-
-	/**
-	 * Create and echo the descriptive text for the site-wide options section.
-	 *
-	 * @theMikeD Pass 1
-	 */
-	public function do_section_site() {
-		echo wp_kses( 'These options are site-wide and will apply to every page.', self::get_kses_valid_tags__message() );
-	}
-
-
-	/**
-	 * Create and echo the descriptive text for the homepage options section.
-	 *
-	 * @theMikeD Pass 1
-	 */
-	public function do_section_home() {
-		echo wp_kses( 'These options are for the homepage only.', self::get_kses_valid_tags__message() );
-	}
-
-
-	/**
-	 * Create and echo the descriptive text for the single post and custom post type options section.
-	 *
-	 * @theMikeD Pass 1
-	 */
-	public function do_section_single() {
-		echo wp_kses( 'These options are for posts and any custom post types that are enabled (below).', self::get_kses_valid_tags__message() );
-	}
-
-
-	/**
-	 * Create and echo the descriptive text for the page options section.
-	 *
-	 * @theMikeD Pass 1
-	 */
-	public function do_section_page() {
-		echo wp_kses( 'These options are for pages.', self::get_kses_valid_tags__message() );
-	}
-
-
-	/**
-	 * Create and echo the descriptive text for the Notes section.
-	 *
-	 * @theMikeD Pass 1
-	 */
-	public function do_section_notes() {
-		echo wp_kses( 'Notes on other specific page types.', self::get_kses_valid_tags__message() );
-	}
-
-	/*
-	// Create and echo the descriptive text for the Reset section.
-	// function do_section_reset() {
-	// echo wp_kses( 'Clicking the button belo.', self::get_kses_valid_tags__message() );
-	// }
-	*/
-
-	/**
-	 * Get the excerpt while outside the loop. Uses the manually crafted excerpt if found. Otherwise creates a string
-	 * based on the post content according to the following rules:
-	 *   - Retrieves $excerpt_max_len characters from the post content after stripping shorcodes and HTML.
-	 *   - If the derived excerpt contains no period, an ellipsis entitiy is appended and that string is used.
-	 *   - If the derived excerpt contains a period and after truncating on that period the excerpt is > $desc_min_length, that
-	 *     is used. Otherwise, an ellipsis entity is appended and that string is used.
-	 *
-	 * Provides a filter amt_get_the_excerpt() to modify the excerpt before returning it.
-	 *
-	 * @theMikeD Pass 1
-	 *
-	 * @param object $post            The post object.
-	 * @param int $excerpt_max_len    The maximum excerpt length when it's pulled from content.
-	 *                                from the post content, it must be at least this many characters.
-	 * @param int $desc_min_length    The minimum length for the excerpt.
-	 * @return string                 The excerpt.
-	 */
-	public function get_the_excerpt( $post, $excerpt_max_len=null, $desc_min_length=null ) {
-
-	    if ( ! is_object( $post ) || ! is_a( $post, 'WP_Post' ) ) {
-	        return '';
-        }
-
-		if ( ! empty( $post->post_excerpt ) ) {
-			$post_excerpt = $post->post_excerpt;
-		} else {
-			$excerpt_max_len = ( $excerpt_max_len ) ? (int) $excerpt_max_len : $this->excerpt_max_length;
-			$desc_min_length = ( $desc_min_length ) ? (int) $desc_min_length : $this->excerpt_min_length;
-
-			$post_content = wp_strip_all_tags( strip_shortcodes( $post->post_content ) );
-			$post_excerpt = substr( $post_content, 0, $excerpt_max_len );
-
-			$excerpt_period_position = strrpos( $post_excerpt, '.' );
-			if ( $excerpt_period_position ) {
-				$excerpt_ending_on_period = substr( $post_excerpt, 0, $excerpt_period_position + 1 );
-
-				// If the description would be too small, then use an ellipsis.
-				if ( strlen( $excerpt_ending_on_period ) < $desc_min_length ) {
-					$post_excerpt .= '&hellip;';
-				} else {
-					$post_excerpt = $excerpt_ending_on_period;
-				}
-			} else {
-				$post_excerpt .= '&hellip;';
-			}
-		}
-		/**
-		 * Filter the excerpt as derived by this function.
-		 *
-		 * @param string  $post_excerpt     The derived excerpt.
-		 * @param WP_Post object $posts[0]  The post object being considered.
-		 */
-		return apply_filters( 'amt_get_the_excerpt', $post_excerpt, $post );
-	}
-
-
-	/**
-	 * Get the post categories as a comma-delimited string. False if no categories are found.
-	 *
-	 * Provides a filter amt_get_the_categories() to modify the categories list before returning it.
-	 *
-	 * @theMikeD Pass 1
-	 *
-	 * @return bool|string  Comma-separated list of post's categories
-	 */
-	public function get_post_categories() {
-		global $posts;
-		$categories_as_string = '';
-
-		$categories = get_the_category( $posts[0]->ID );
-		if ( is_array( $categories ) && ! empty( $categories ) ) {
-			$category_names       = wp_list_pluck( $categories, 'cat_name' );
-			$categories_as_string = implode( ', ', $category_names );
-		}
-
-		/**
-		 * Filter the categories as derived by this function.
-		 *
-		 * @param string  $categories_as_string     The derived category list. Comma-separated list.
-		 * @param array   $categories               The array of post category objects.
-		 */
-		return apply_filters( 'amt_get_the_categories', $categories_as_string, $categories );
-	}
-
-
-	/**
-	 * Get the post tags as a comma-delimited string. False if no tags are found.
-	 *
-	 * Provides a filter amt_get_the_tags() to modify the tags list before returning it.
-	 *
-	 * @theMikeD Pass 1
-	 *
-	 * @return bool|string  Comma-separated list of post's tags
-	 */
-	public function get_post_tags() {
-		global $posts;
-		$tags_as_string = '';
-
-		$tags = get_the_tags( $posts[0]->ID );
-		if ( is_array( $tags ) && ! empty( $tags ) ) {
-			$tag_names      = wp_list_pluck( $tags, 'name' );
-			$tags_as_string = implode( ', ', $tag_names );
-		}
-		// MD: This is done to tags but not categories, Should not be done here IMHO.
-		// $tag_list = strtolower( rtrim( $tag_list, ' ,' ) );
-
-		/**
-		 * Filter the categories as derived by this function.
-		 *
-		 * @param string  $tags_as_string     The derived tag list. Comma-separated list.
-		 * @param array   $tags               The array of post tag objects.
-		 */
-		return apply_filters( 'amt_get_the_tags', $tags_as_string, $tags );
-	}
-
-
-	/**
-	 * Get the 20 most popular categories, optionally excluding 'Uncategorized' from the list.
-	 *
-	 * @theMikeD Pass 1
-	 *
-	 * @param bool $no_uncategorized    If true, skip 'Uncategorized' Otherwise, include it.
-	 * @return string                   Comma-separated list of site's 20 top categories, or empty string.
-	 */
-	public function get_site_categories( $no_uncategorized = true ) {
-		$popular_category_names = wp_cache_get( 'amt_get_all_categories', 'category' );
-		if ( ! $popular_category_names ) {
-			$popular_category_names = get_terms(
-				array(
-					'taxonomy' => 'category',
-					'fields'   => 'names',
-					'get'      => 'all',
-					'number'   => 20, // limit to 20 to avoid killer queries.
-					'orderby'  => 'count',
-				)
-			);
-			wp_cache_add( 'amt_get_all_categories', $popular_category_names, 'category' );
-		}
-
-		if ( empty( $popular_category_names ) && ! is_array( $popular_category_names ) ) {
-			$categories_as_string = '';
-		} else {
-			if ( $no_uncategorized ) {
-				$uncategorized_position = array_search( 'Uncategorized', $popular_category_names, true );
-				if ( false !== $uncategorized_position ) {
-					unset( $popular_category_names[ $uncategorized_position ] );
-				}
-			}
-			$categories_as_string = implode( ', ', $popular_category_names );
-		}
-
-		/**
-		 * Filter the categories as derived by this function.
-		 *
-		 * @param string  $categories_as_string     The derived category list. Comma-separated list.
-		 * @param array   $popular_category_names   The array of found category names.
-		 */
-		return apply_filters( 'amt_get_all_the_categories', $categories_as_string, $popular_category_names );
-	}
-
-
-	/**
-	 * Cleans out unwanted characters for use with meta tags.
-	 *
-	 * @theMikeD Pass 1
-	 *
-	 * @param string $text The text to clean.
-	 * @return string
-	 */
-	public function clean_meta_tags( $text ) {
-		$text = stripslashes( $text );
-		$text = trim( $text );
-		return $text;
-	}
-
 	/**
 	 * Creates and echoes the meta tag block for the page header.
 	 *
@@ -1243,6 +422,419 @@ class Add_Meta_Tags {
 	}
 
 
+	/*******************************************************************************************************************
+	 * Methods related to the post edit meta box
+	 */
+
+
+	/**
+	 * Adds the post edit meta box for supported post types.
+	 *
+	 * @theMikeD Pass 1
+	 *
+	 * @todo: confirm this works with only the specified post types
+	 *
+	 * @param string  $post_type  The post type of the current edit page.
+	 * @param WP_Post $post       The current post object.
+	 *
+	 * @return void
+	 */
+	public function add_meta_box( $post_type, $post ) {
+		if ( $this->is_supported_post_type( $post_type ) ) {
+			add_meta_box(
+				'mt_seo',
+				$this->options_page_name,
+				array( $this, 'do_meta_box' ),
+				$post_type,
+				'normal'
+			);
+		}
+	}
+
+
+	/*******************************************************************************************************************
+	 * Methods related to the Options screen.
+	 */
+
+	/**
+	 * Adds the options panel under Settings.
+	 *
+	 * @theMikeD DONE
+	 *
+	 * @return void
+	 */
+	public function add_options_panel() {
+		add_options_page(
+			$this->options_page_name,
+			$this->options_page_menu_name,
+			'administrator',
+			$this->slug,
+			array( $this, 'do_options_page' )
+		);
+	}
+
+
+	/**
+	 * Display the options page content.
+	 *
+	 * @theMikeD DONE
+	 *
+	 * @return void
+	 */
+	public function do_options_page() {
+		?>
+		<div class="wrap">
+			<h1><?php echo esc_html( $this->options_page_name ); ?></h1>
+			<form method="POST" action="options.php">
+				<?php settings_fields( $this->options_key ); ?>
+				<?php do_settings_sections( $this->slug ); ?>
+				<?php submit_button(); ?>
+			</form>
+		</div>
+		<?php
+	}
+
+
+	/**
+	 * Set up the options page fields and callbacks.
+	 *
+	 * @theMikeD DONE
+	 *
+	 * @return void
+	 */
+	public function create_options_page_fields() {
+		/*
+		 * Three steps to using the settings API.
+		 *
+		 * Step 1: register each setting. In our case we will be storing all options for this
+		 * plugin as an array in a single entry in the options table, so we only need to call
+		 * this once. This is why both values are the same.
+		 */
+		register_setting( $this->options_key, $this->options_key );
+
+		/*
+		 * Step 2: Create the settings section(s).
+		 * This is for visual organization only, but at least one is needed.
+		 */
+		add_settings_section( $this->slug . '_site', __( 'Site-Wide Settings', 'add-meta-tags' ), array( $this, 'do_section_site_wide'), $this->slug );
+		add_settings_section( $this->slug . '_home', __( 'Homepage Settings', 'add-meta-tags' ), array( $this, 'do_section_home' ), $this->slug );
+		add_settings_section( $this->slug . '_single', __( 'Post Settings', 'add-meta-tags' ), array( $this, 'do_section_post'), $this->slug );
+		add_settings_section( $this->slug . '_page', __( 'Page Settings', 'add-meta-tags' ), array( $this, 'do_section_page' ), $this->slug );
+		add_settings_section( $this->slug . '_notes', __( 'Notes on Other Pages', 'add-meta-tags' ), array( $this, 'do_section_notes' ), $this->slug );
+
+		/*
+		Step 3: For each option to be saved, add the settings GUI and callback to the
+		appropriate section. One of these for every setting item in our array.
+		*/
+
+		// Site options.
+		add_settings_field(
+			'site_wide_meta',
+			__( 'Site-wide META tags', 'add-meta-tags' ),
+			array( $this, 'do_site_wide_meta_html' ),
+			$this->slug,
+			$this->slug . '_site'
+		);
+
+		// Home page options.
+		add_settings_field(
+			'site_description',
+			__( 'Homepage Description', 'add-meta-tags' ),
+			array( $this, 'do_home_description_html'),
+			$this->slug,
+			$this->slug . '_home'
+		);
+		add_settings_field(
+			'site_keywords',
+			__( 'Homepage Keywords', 'add-meta-tags' ),
+			array( $this, 'do_home_keywords_html'),
+			$this->slug,
+			$this->slug . '_home'
+		);
+
+		// Post/Page Single options. These checkboxes are added together as a fieldset.
+		add_settings_field(
+			'mt_seo_title',
+			__( 'Enabled Sections', 'add-meta-tags' ),
+			array( $this, 'do_post_options_html' ),
+			$this->slug,
+			$this->slug . '_single'
+		);
+		// CPT selectors. These checkboxes are added together as a fieldset, but only if there are in fact custom post types..
+		if ( $this->valid_custom_post_types_are_present() ) {
+			add_settings_field(
+				'custom_post_types',
+				__( 'Enabled Custom Post Types', 'add-meta-tags' ),
+				array( $this, 'do_custom_post_types_html' ),
+				$this->slug,
+				$this->slug . '_single'
+			);
+		}
+
+		// Page selectors. These checkboxes are added together as a fieldset.
+		add_settings_field(
+			'page_options',
+			__( 'Enabled Sections', 'add-meta-tags' ),
+			array( $this, 'do_page_options_html' ),
+			$this->slug,
+			$this->slug . '_page'
+		);
+
+		// Notes for category archives.
+		add_settings_field(
+			'taxonomy_archive_notes',
+			__( 'Taxonomy Archives', 'add-meta-tags' ),
+			array( $this, 'do_taxonomy_archive_notes_html' ),
+			$this->slug,
+			$this->slug . '_notes'
+		);
+	}
+
+
+	/**
+	 * Create and echo the descriptive text for the site-wide options section.
+	 *
+	 * @theMikeD DONE
+     *
+	 */
+	public function do_section_site_wide() {
+		echo wp_kses( 'These options are site-wide and will apply to every page.', self::get_kses_valid_tags__message() );
+	}
+
+
+	/**
+	 * Displays the HTML form element for the site_wide_meta option in the admin options page.
+	 *
+	 * @theMikeD DONE
+	 *
+	 * @return void
+	 */
+	public function do_site_wide_meta_html() {
+		$stored_options = $this->get_saved_options();
+		echo wp_kses(
+			'<p>' . __( 'Provide the full XHTML code of META tags you would like to be included in <strong>every page of your site</strong>.', 'add-meta-tags' ) . '</p>',
+			self::get_kses_valid_tags__message()
+		);
+		echo wp_kses(
+			"<textarea name='{$this->options_key}[site_wide_meta]' class='code'>" . esc_textarea( stripslashes( $stored_options['site_wide_meta'] ) ) . '</textarea>',
+			self::get_kses_valid_tags__textarea()
+		);
+		echo wp_kses(
+			'<p><strong>' . __( 'Example', 'add-meta-tags' ) . '</strong>: <code>&lt;meta name="robots" content="index,follow" /&gt;</code></p>',
+			self::get_kses_valid_tags__message()
+		);
+	}
+
+
+	/**
+	 * Create and echo the descriptive text for the homepage options section.
+	 *
+	 * @theMikeD Pass 1
+	 */
+	public function do_section_home() {
+		echo wp_kses( 'These options are for the homepage only.', self::get_kses_valid_tags__message() );
+	}
+
+
+	/**
+	 * Displays the HTML form element for the site_description option in the admin options page.
+	 *
+	 * @theMikeD DONE
+	 *
+	 * @return void
+	 */
+	public function do_home_description_html() {
+		$stored_options = $this->get_saved_options();
+		echo wp_kses( '<p>' . __( 'This text will be used in the "description" meta tag on the <strong>homepage only</strong>.</p><p>If this is left empty, then description from the Tagline (found on the General Options page) will be used.', 'add-meta-tags' ) . '</p>', self::get_kses_valid_tags__message() );
+		echo wp_kses( "<textarea name='{$this->options_key}[site_description]' class='code' id='mt_seo_description'>" . esc_textarea( stripslashes( $stored_options['site_description'] ) ) . '</textarea>', self::get_kses_valid_tags__textarea() );
+	}
+
+
+	/**
+	 * Displays the HTML form element for the site_keywords option in the admin options page.
+	 *
+	 * @theMikeD DONE
+	 *
+	 * @return void
+	 */
+	public function do_home_keywords_html() {
+		$stored_options = $this->get_saved_options();
+		echo wp_kses( '<p>' . __( 'These keywords will be used for the "keywords" meta tag on the <strong>homepage only</strong>. Provide a comma-delimited list of keywords.</p><p>If this field is left <strong>empty</strong>, then all of your blog\'s categories, except for the "Uncategorized" category, will be used as keywords for the "keywords" meta tag.', 'add-meta-tags' ) . '</p>', self::get_kses_valid_tags__message() );
+		echo wp_kses( "<textarea name='{$this->options_key}[site_keywords]' class='code'>" . esc_textarea( stripslashes( $stored_options['site_keywords'] ) ) . '</textarea>', self::get_kses_valid_tags__textarea() );
+	}
+
+
+	/**
+	 * Create and echo the descriptive text for the single post and custom post type options section.
+	 *
+	 * @theMikeD Pass 1
+	 */
+	public function do_section_post() {
+		echo wp_kses( 'These options are for posts and any custom post types that are enabled (below).', self::get_kses_valid_tags__message() );
+	}
+
+
+	/**
+	 * Displays the HTML form element for the do_mt_seo_title_html option in the admin options page.
+	 *
+	 * @theMikeD DONE
+	 *
+	 * @return void
+	 */
+	public function do_post_options_html() {
+		$stored_options = $this->get_saved_options();
+
+		echo wp_kses( '<fieldset>', array( 'fieldset' => true ) );
+		echo wp_kses( '<legend>Select the fields to enable on post and custom post type pages.</legend>', array( 'legend' => true ) );
+		echo wp_kses( '<ul>', $this->get_kses_valid_tags__list() );
+
+		$checkbox_value = self::validate_checkbox( $stored_options['post_options'], 'mt_seo_title' );
+		echo wp_kses( "<li><input type='checkbox' id='post_mt_seo_title' name='{$this->options_key}[post_options][mt_seo_title]' value='1' " . checked( '1', $checkbox_value, false ) . " /><label for='post_mt_seo_title'>" . __( 'Enable \'Title\'', 'add-meta-tags' ) . '</label></li>', self::get_kses_valid_tags__checkbox() );
+
+		$checkbox_value = self::validate_checkbox( $stored_options['post_options'], 'mt_seo_description' );
+		// md_log( 'Valid? ' . $checkbox_value );
+		echo wp_kses( "<li><input type='checkbox' id='post_mt_seo_description' name='{$this->options_key}[post_options][mt_seo_description]' value='1' " . checked( '1', $checkbox_value, false ) . " /><label for='post_mt_seo_description'>" . __( 'Enable \'Description\'', 'add-meta-tags' ) . '</label></li>', self::get_kses_valid_tags__checkbox() );
+
+		$checkbox_value = self::validate_checkbox( $stored_options['post_options'], 'mt_seo_keywords' );
+		echo wp_kses( "<li><input type='checkbox' id='post_mt_seo_keywords' name='{$this->options_key}[post_options][mt_seo_keywords]' value='1' " . checked( '1', $checkbox_value, false ) . " /><label for='post_mt_seo_keywords'>" . __( 'Enable \'Keywords\'', 'add-meta-tags' ) . '</label></li>', self::get_kses_valid_tags__checkbox() );
+
+		$checkbox_value = self::validate_checkbox( $stored_options['post_options'], 'mt_seo_meta' );
+		echo wp_kses( "<li><input type='checkbox' id='post_mt_seo_meta' name='{$this->options_key}[post_options][mt_seo_meta]' value='1' " . checked( '1', $checkbox_value, false ) . " /><label for='post_mt_seo_meta'>" . __( 'Enable \'Meta Tags\'', 'add-meta-tags' ) . '</label></li>', self::get_kses_valid_tags__checkbox() );
+
+		$checkbox_value = self::validate_checkbox( $stored_options['post_options'], 'mt_seo_google_news_meta' );
+		echo wp_kses( "<li><input type='checkbox' id='post_mt_seo_google_news_meta' name='{$this->options_key}[post_options][mt_seo_google_news_meta]' value='1' " . checked( '1', $checkbox_value, false ) . " /><label for='post_mt_seo_google_news_meta'>" . __( 'Enable \'Google News Meta Tags\'', 'add-meta-tags' ) . '</label></li>', self::get_kses_valid_tags__checkbox() );
+
+		echo wp_kses( '</ul>', $this->get_kses_valid_tags__list() );
+		echo wp_kses( '</fieldset>', array( 'fieldset' => true ) );
+	}
+
+
+	/**
+	 * Displays the HTML form element for the custom_post_types option in the admin options page if
+	 * any valid custom post types are present.
+	 *
+	 * @theMikeD DONE
+	 *
+	 * @return void
+	 */
+	public function do_custom_post_types_html() {
+
+		if ( ! $this->valid_custom_post_types_are_present() ) {
+			return;
+		}
+
+		echo wp_kses( '<fieldset>', array( 'fieldset' => true ) );
+		echo wp_kses(
+			'<legend>' . __( 'You can enable the Post Settings for custom post types too. Use the checkboxes below to do so.', 'add-meta-tags' ) . '</legend>',
+			array(
+				'legend' => true,
+				'code'   => true,
+				'br'     => true,
+				'strong' => true,
+			)
+		);
+		echo wp_kses( '<ul>', self::get_kses_valid_tags__list() );
+
+		$registered_post_types = $this->get_registered_post_types();
+		$supported_post_types  = $this->get_supported_post_types( true );
+
+		foreach ( $registered_post_types as $post_type ) {
+			$checkbox_value = self::validate_checkbox( $supported_post_types, $post_type->name );
+			echo wp_kses(
+				"<li><input type='checkbox' id='post_type_{$post_type->name}' name='{$this->options_key}[custom_post_types][" . esc_attr( $post_type->name ) . "]' value='1' " . checked( '1', $checkbox_value, false ) . " /><label for='post_type_{$post_type->name}'>" . __( 'Apply Post Settings to ', 'add-meta-tags' ) . wp_strip_all_tags( $post_type->labels->name ) . ' (<code>' . wp_strip_all_tags( $post_type->name ) . '</code>)</label></li>',
+				self::get_kses_valid_tags__checkbox()
+			);
+		}
+
+		echo wp_kses( '</ul>', self::get_kses_valid_tags__list() );
+		echo wp_kses( '</fieldset>', array( 'fieldset' => true ) );
+	}
+
+
+	/**
+	 * Create and echo the descriptive text for the page options section.
+	 *
+	 * @theMikeD Pass 1
+	 */
+	public function do_section_page() {
+		echo wp_kses( 'These options are for pages.', self::get_kses_valid_tags__message() );
+	}
+
+
+	/**
+	 * Displays the HTML form element for the page_options option in the admin options page.
+	 *
+	 * @theMikeD DONE
+	 *
+	 * @return void
+	 */
+	public function do_page_options_html() {
+		$stored_options = $this->get_saved_options();
+
+		echo wp_kses( '<fieldset>', array( 'fieldset' => true ) );
+		echo wp_kses( '<legend>Select the fields to enable on pages.</legend>', array( 'legend' => true ) );
+		echo wp_kses( '<ul>', $this->get_kses_valid_tags__list() );
+
+		$checkbox_value = self::validate_checkbox( $stored_options['page_options'], 'mt_seo_title' );
+		echo wp_kses( "<li><input type='checkbox' id='page_mt_seo_title' name='{$this->options_key}[page_options][mt_seo_title]' value='1' " . checked( '1', $checkbox_value, false ) . " /><label for='page_mt_seo_title'>" . __( 'Enable \'Title\'', 'add-meta-tags' ) . '</label></li>', self::get_kses_valid_tags__checkbox() );
+
+		$checkbox_value = self::validate_checkbox( $stored_options['page_options'], 'mt_seo_description' );
+		// md_log( 'Valid? ' . $checkbox_value );
+		echo wp_kses( "<li><input type='checkbox' id='page_mt_seo_description' name='{$this->options_key}[page_options][mt_seo_description]' value='1' " . checked( '1', $checkbox_value, false ) . " /><label for='page_mt_seo_description'>" . __( 'Enable \'Description\'', 'add-meta-tags' ) . '</label></li>', self::get_kses_valid_tags__checkbox() );
+
+		$checkbox_value = self::validate_checkbox( $stored_options['page_options'], 'mt_seo_keywords' );
+		echo wp_kses( "<li><input type='checkbox' id='page_mt_seo_keywords' name='{$this->options_key}[page_options][mt_seo_keywords]' value='1' " . checked( '1', $checkbox_value, false ) . " /><label for='page_mt_seo_keywords'>" . __( 'Enable \'Keywords\'', 'add-meta-tags' ) . '</label></li>', self::get_kses_valid_tags__checkbox() );
+
+		$checkbox_value = self::validate_checkbox( $stored_options['page_options'], 'mt_seo_meta' );
+		echo wp_kses( "<li><input type='checkbox' id='page_mt_seo_meta' name='{$this->options_key}[page_options][mt_seo_meta]' value='1' " . checked( '1', $checkbox_value, false ) . " /><label for='page_mt_seo_meta'>" . __( 'Enable \'Meta Tags\'', 'add-meta-tags' ) . '</label></li>', self::get_kses_valid_tags__checkbox() );
+
+		$checkbox_value = self::validate_checkbox( $stored_options['page_options'], 'mt_seo_google_news_meta' );
+		echo wp_kses( "<li><input type='checkbox' id='page_mt_seo_google_news_meta' name='{$this->options_key}[page_options][mt_seo_google_news_meta]' value='1' " . checked( '1', $checkbox_value, false ) . " /><label for='page_mt_seo_google_news_meta'>" . __( 'Enable \'Google News Meta Tags\'', 'add-meta-tags' ) . '</label></li>', self::get_kses_valid_tags__checkbox() );
+
+		echo wp_kses( '</ul>', $this->get_kses_valid_tags__list() );
+		echo wp_kses( '</fieldset>', array( 'fieldset' => true ) );
+	}
+
+
+	/**
+	 * Create and echo the descriptive text for the Notes section.
+	 *
+	 * @theMikeD Pass 1
+	 */
+	public function do_section_notes() {
+		echo wp_kses( 'Notes on other specific page types.', self::get_kses_valid_tags__message() );
+	}
+
+	/**
+	 * Displays the HTML form element for the taxonomy_archive_notes option in the admin options page.
+	 *
+	 * @theMikeD DONE
+	 *
+	 * @return void
+	 */
+	public function do_taxonomy_archive_notes_html() {
+		echo wp_kses(
+			'<p>META tags are automatically added to Category, Tag, and Custom Taxonomy Archive pages as follows:</p>',
+			$this->get_kses_valid_tags__message()
+		);
+		echo wp_kses( '<ol>', $this->get_kses_valid_tags__list() );
+		echo wp_kses(
+			'<li>The term name is set as the "keywords" META tag.</li>',
+			$this->get_kses_valid_tags__list()
+		);
+		echo wp_kses(
+			'<li>If the term has a description, that description is set as the "description" META tag.</li>',
+			$this->get_kses_valid_tags__list()
+		);
+		echo wp_kses( '</ol>', $this->get_kses_valid_tags__list() );
+		echo wp_kses( '</p>', $this->get_kses_valid_tags__message() );
+	}
+
+
+	/*******************************************************************************************************************
+	 * Methods related to the post edit page meta box.
+	 */
+
 	/**
 	 * Creates, populates and adds the per-page meta box.
 	 *
@@ -1389,6 +981,59 @@ class Add_Meta_Tags {
 	}
 
 
+
+
+	/*******************************************************************************************************************
+	 * Methods related to getting, checking and saving options for the main options panel and the post meta box.
+	 */
+
+	/**
+	 * Retrieves the options from the database and stores them for later use if not already stored.
+	 *
+	 * @theMikeD DONE
+	 *
+	 * @return array
+	 */
+	public function get_saved_options() {
+		if ( empty( $this->saved_options ) ) {
+			$saved_options = get_option( $this->options_key );
+			if ( ! is_array( $saved_options ) ) {
+				$saved_options = array();
+			}
+			$this->saved_options = $saved_options;
+		}
+		return $this->saved_options;
+	}
+
+
+	/**
+	 * Retrieves the enabled SEO options for singular pages, as defined on the main Settings page. Defaults to everything
+     * enabled.
+	 *
+	 * @theMikeD DONE
+	 *
+	 * @param string $post_type  Post type of current post.
+	 * @return array             Array of enabled options.
+	 */
+	public function get_enabled_singular_options( $post_type ) {
+		$options   = get_option( $this->options_key );
+		$retrieved = array(
+			'mt_seo_title'            => true,
+			'mt_seo_description'      => true,
+			'mt_seo_keywords'         => true,
+			'mt_seo_google_news_meta' => true,
+			'mt_seo_meta'             => true,
+		);
+		if ( $this->is_supported_post_type( $post_type ) ) {
+			if ( 'page' === $post_type ) {
+				$retrieved = $options['page_options'];
+			} else {
+				$retrieved = $options['post_options'];
+			}
+		}
+		return $this->make_array_values_boolean( $retrieved );
+	}
+
 	/**
 	 * Calls the save routine if required
 	 *
@@ -1490,6 +1135,331 @@ class Add_Meta_Tags {
 		// Remove old Yoast data.
 		delete_post_meta( $post_id, '_yoast_wpseo_metadesc' );
 		delete_post_meta( $post_id, '_yoast_wpseo_title' );
+	}
+
+
+	/*******************************************************************************************************************
+	 * Helper methods.
+	 */
+
+
+	/**
+	 * Gets the valid tags and attributes for use with checkbox elements in the admin options page and meta boxes.
+	 *
+	 * @theMikeD DONE
+	 *
+	 * @return array
+	 */
+	private function get_kses_valid_tags__checkbox() {
+		return array(
+			'li'    => true,
+			'code'  => true,
+			'input' => array(
+				'name'    => true,
+				'checked' => true,
+				'type'    => true,
+				'value'   => true,
+				'id'      => true,
+			),
+		);
+	}
+
+
+	/**
+	 * Gets the valid tags and attributes for use with lists in the admin options page and meta boxes.
+	 *
+	 * @theMikeD DONE
+	 *
+	 * @return array
+	 */
+	private function get_kses_valid_tags__list() {
+		return array(
+			'ul' => true,
+			'ol' => true,
+			'li' => true,
+		);
+	}
+
+	/**
+	 * Gets the valid tags and attributes for use with <textarea> elements in the admin options page and meta boxes.
+	 *
+	 * @theMikeD DONE
+	 *
+	 * @return array
+	 */
+	private function get_kses_valid_tags__textarea() {
+		return array(
+			'textarea' => array(
+				'name'     => true,
+				'class'    => true,
+				'tabindex' => true,
+				'id'       => true,
+			),
+		);
+	}
+
+
+	/**
+	 * Gets the valid tags and attributes for use with <input type='text'> elements in the admin options page and meta boxes.
+	 *
+	 * @theMikeD DONE
+	 *
+	 * @return array
+	 */
+	private function get_kses_valid_tags__text_input() {
+		return array(
+			'input' => array(
+				'type'     => true,
+				'class'    => true,
+				'tabindex' => true,
+				'name'     => true,
+				'id'       => true,
+				'value'    => true,
+			),
+		);
+	}
+
+
+	/**
+	 * Gets the valid tags and attributes for use with general messages in the admin options page and meta boxes.
+	 *
+	 * @theMikeD DONE
+     *
+	 * @return array
+	 */
+	private function get_kses_valid_tags__message() {
+		return array(
+			'strong' => true,
+			'p'      => true,
+			'code'   => true,
+			'em'     => true,
+		);
+	}
+
+
+	/**
+	 * Gets the valid tags and attributes for use with elements related to the meta box in the post/page edit screen.
+	 *
+	 * @theMikeD DONE
+	 *
+	 * @return array
+	 */
+	private function form_get_kses_valid_tags__metabox() {
+		return array(
+			'h4'    => true,
+			'br'    => true,
+			'a'     => array(
+				'href'  => true,
+				'class' => true,
+			),
+			'div'   => array(
+				'class' => true,
+				'id'    => true,
+			),
+			'span'  => array(
+				'class' => true,
+			),
+			'p'     => array(
+				'class' => true,
+			),
+			'label' => array(
+				'for' => true,
+			),
+		);
+	}
+
+
+	/**
+	 * Gets the valid tags and attributes for use with <meta> elements in page source.
+	 *
+	 * @theMikeD DONE
+	 *
+	 * @return array
+	 */
+	private function get_kses_valid_tags__metatags() {
+		return array(
+			'meta' => array(
+				'name'    => true,
+				'content' => true,
+			),
+		);
+	}
+
+
+	/**
+	 * Get the excerpt while outside the loop. Uses the manually crafted excerpt if found. Otherwise creates a string
+	 * based on the post content according to the following rules:
+	 *   - Retrieves $excerpt_max_len characters from the post content after stripping shorcodes and HTML.
+	 *   - If the derived excerpt contains no period, an ellipsis entitiy is appended and that string is used.
+	 *   - If the derived excerpt contains a period and after truncating on that period the excerpt is > $desc_min_length, that
+	 *     is used. Otherwise, an ellipsis entity is appended and that string is used.
+	 *
+	 * Provides a filter amt_get_the_excerpt() to modify the excerpt before returning it.
+	 *
+	 * @theMikeD DONE
+	 *
+	 * @param object $post               The post object.
+	 * @param int    $excerpt_max_len    The maximum excerpt length when it's pulled from content.
+	 *                                   from the post content, it must be at least this many characters.
+	 * @param int    $desc_min_length    The minimum length for the excerpt.
+	 * @return string                    The excerpt.
+	 */
+	public function get_the_excerpt( $post, $excerpt_max_len = null, $desc_min_length = null ) {
+
+		if ( ! is_object( $post ) || ! is_a( $post, 'WP_Post' ) ) {
+			return '';
+		}
+
+		if ( ! empty( $post->post_excerpt ) ) {
+			$post_excerpt = $post->post_excerpt;
+		} else {
+			$excerpt_max_len = ( $excerpt_max_len ) ? (int) $excerpt_max_len : $this->excerpt_max_length;
+			$desc_min_length = ( $desc_min_length ) ? (int) $desc_min_length : $this->excerpt_min_length;
+
+			$post_content = wp_strip_all_tags( strip_shortcodes( $post->post_content ) );
+			$post_excerpt = substr( $post_content, 0, $excerpt_max_len );
+
+			$excerpt_period_position = strrpos( $post_excerpt, '.' );
+			if ( $excerpt_period_position ) {
+				$excerpt_ending_on_period = substr( $post_excerpt, 0, $excerpt_period_position + 1 );
+
+				// If the description would be too small, then use an ellipsis.
+				if ( strlen( $excerpt_ending_on_period ) < $desc_min_length ) {
+					$post_excerpt .= '&hellip;';
+				} else {
+					$post_excerpt = $excerpt_ending_on_period;
+				}
+			} else {
+				$post_excerpt .= '&hellip;';
+			}
+		}
+		/**
+		 * Filter the excerpt as derived by this function.
+		 *
+		 * @param string  $post_excerpt     The derived excerpt.
+		 * @param WP_Post object $posts[0]  The post object being considered.
+		 */
+		return apply_filters( 'amt_get_the_excerpt', $post_excerpt, $post );
+	}
+
+
+	/**
+	 * Get the post categories as a comma-delimited string. False if no categories are found.
+	 *
+	 * Provides a filter amt_get_the_categories() to modify the categories list before returning it.
+	 *
+	 * @theMikeD Pass 1
+	 *
+	 * @return bool|string  Comma-separated list of post's categories
+	 */
+	public function get_post_categories() {
+		global $posts;
+		$categories_as_string = '';
+
+		$categories = get_the_category( $posts[0]->ID );
+		if ( is_array( $categories ) && ! empty( $categories ) ) {
+			$category_names       = wp_list_pluck( $categories, 'cat_name' );
+			$categories_as_string = implode( ', ', $category_names );
+		}
+
+		/**
+		 * Filter the categories as derived by this function.
+		 *
+		 * @param string  $categories_as_string     The derived category list. Comma-separated list.
+		 * @param array   $categories               The array of post category objects.
+		 */
+		return apply_filters( 'amt_get_the_categories', $categories_as_string, $categories );
+	}
+
+
+	/**
+	 * Get the post tags as a comma-delimited string. False if no tags are found.
+	 *
+	 * Provides a filter amt_get_the_tags() to modify the tags list before returning it.
+	 *
+	 * @theMikeD Pass 1
+	 *
+	 * @return bool|string  Comma-separated list of post's tags
+	 */
+	public function get_post_tags() {
+		global $posts;
+		$tags_as_string = '';
+
+		$tags = get_the_tags( $posts[0]->ID );
+		if ( is_array( $tags ) && ! empty( $tags ) ) {
+			$tag_names      = wp_list_pluck( $tags, 'name' );
+			$tags_as_string = implode( ', ', $tag_names );
+		}
+		// MD: This is done to tags but not categories, Should not be done here IMHO.
+		// $tag_list = strtolower( rtrim( $tag_list, ' ,' ) );
+
+		/**
+		 * Filter the categories as derived by this function.
+		 *
+		 * @param string  $tags_as_string     The derived tag list. Comma-separated list.
+		 * @param array   $tags               The array of post tag objects.
+		 */
+		return apply_filters( 'amt_get_the_tags', $tags_as_string, $tags );
+	}
+
+
+	/**
+	 * Get the 20 most popular categories, optionally excluding 'Uncategorized' from the list.
+	 *
+	 * @theMikeD Pass 1
+	 *
+	 * @param bool $no_uncategorized    If true, skip 'Uncategorized' Otherwise, include it.
+	 * @return string                   Comma-separated list of site's 20 top categories, or empty string.
+	 */
+	public function get_site_categories( $no_uncategorized = true ) {
+		$popular_category_names = wp_cache_get( 'amt_get_all_categories', 'category' );
+		if ( ! $popular_category_names ) {
+			$popular_category_names = get_terms(
+				array(
+					'taxonomy' => 'category',
+					'fields'   => 'names',
+					'get'      => 'all',
+					'number'   => 20, // limit to 20 to avoid killer queries.
+					'orderby'  => 'count',
+				)
+			);
+			wp_cache_add( 'amt_get_all_categories', $popular_category_names, 'category' );
+		}
+
+		if ( empty( $popular_category_names ) && ! is_array( $popular_category_names ) ) {
+			$categories_as_string = '';
+		} else {
+			if ( $no_uncategorized ) {
+				$uncategorized_position = array_search( 'Uncategorized', $popular_category_names, true );
+				if ( false !== $uncategorized_position ) {
+					unset( $popular_category_names[ $uncategorized_position ] );
+				}
+			}
+			$categories_as_string = implode( ', ', $popular_category_names );
+		}
+
+		/**
+		 * Filter the categories as derived by this function.
+		 *
+		 * @param string  $categories_as_string     The derived category list. Comma-separated list.
+		 * @param array   $popular_category_names   The array of found category names.
+		 */
+		return apply_filters( 'amt_get_all_the_categories', $categories_as_string, $popular_category_names );
+	}
+
+
+	/**
+	 * Cleans out unwanted characters for use with meta tags.
+	 *
+	 * @theMikeD Pass 1
+	 *
+	 * @param string $text The text to clean.
+	 * @return string
+	 */
+	public function clean_meta_tags( $text ) {
+		$text = stripslashes( $text );
+		$text = trim( $text );
+		return $text;
 	}
 
 
@@ -1689,6 +1659,27 @@ class Add_Meta_Tags {
 		return trim( $desc );
 	}
 
+	/**
+	 * Using the 'checked' function will fail if the option being checked is stored in an array and that array key doesn't
+	 * exist. This function will ensure that the value used to compare using 'checked' is always valid.
+	 *
+	 * @theMikeD DONE
+	 *
+	 * @param array  $stored_options        The array of options as retrieved from the database.
+	 * @param string $option_to_check       The particular option to check.
+	 * @return string
+	 */
+	private function validate_checkbox( $stored_options, $option_to_check ) {
+		$checkbox_value = '';
+		// The retrieval method ensures that the options retrieved are always an array but it doesn't hurt to check here.
+		if ( ! is_array( $stored_options ) ) {
+			return '';
+		}
+		if ( array_key_exists( $option_to_check, $stored_options ) && false !== $stored_options[ $option_to_check ] ) {
+			$checkbox_value = $stored_options[ $option_to_check ];
+		}
+		return $checkbox_value;
+	}
 
 }
 
