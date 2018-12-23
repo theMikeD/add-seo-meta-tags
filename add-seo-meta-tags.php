@@ -880,7 +880,8 @@ class Add_Meta_Tags {
 		// Show message if nothing is enabled, then bail
 		if ( ! in_array( '1', $global_values, true ) ) {
 			echo wp_kses(
-				'<p>' . __( 'No SEO fields were enabled. Please enable post fields in the Meta Tags options page', 'add-meta-tags' ) . '</p>',
+				// translators: %1$s is replaced with the opening <a> tag with the href set to the options panel, %2$s is the closing <a> tag
+				'<p>' . sprintf( __( 'No SEO fields were enabled. Please enable post fields in the %1$s Meta Tags options page %2$s', 'add-meta-tags' ), '<a href="' . get_admin_url() . 'options-general.php?page=' . $this->slug . '">', '</a>' ) . '</p>',
 				$this->get_kses_valid_tags__message()
 			);
 			return;
@@ -1235,6 +1236,10 @@ class Add_Meta_Tags {
 			'p'      => true,
 			'code'   => true,
 			'em'     => true,
+			'a'      => array(
+				'href'  => true,
+				'class' => true,
+			),
 		);
 	}
 
@@ -1683,9 +1688,6 @@ class Add_Meta_Tags {
 		return $checkbox_value;
 	}
 
-	// private function get_link_to_options_page() {
-	// return ''
-	// }
 }
 
 $mt_add_meta_tags = new Add_Meta_Tags();
