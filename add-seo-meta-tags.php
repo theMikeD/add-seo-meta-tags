@@ -25,10 +25,12 @@ What's new
  * Removed the reset button on the options panel. Too dangerous.
  * Removes hardcoded strings in the JS and replaces them with localized strings.
  * JS counter for title now works correctly when a blank title is in place
+ * Filter mt_seo_title_append_separator() was removed because wp_title() is deprecated and the replacement filters
+   don't provide a way to specify which side the separator appears on.
 
 What's the same
 1. Saved option names
-2. Existing filters
+2. Existing filters except mt_seo_title_append_separator() (see note in What's New)
 
 ---
 Rewrite by @theMikeD
@@ -197,7 +199,7 @@ class Add_Meta_Tags {
 
 		// Front end hooks.
 		add_action( 'wp_head', array( $this, 'do_meta_tags' ), 0 );
-		add_filter( 'pre_get_document_title', array( $this, 'filter_the_title' ), 1, 3 );
+		add_filter( 'document_title_parts', array( $this, 'filter__the_title_parts' ), 1, 4 );
 
 		load_plugin_textdomain( 'add-meta-tags', false, basename( dirname( __FILE__ ) ) . '/languages' );
 
@@ -863,7 +865,8 @@ class Add_Meta_Tags {
 	/**
 	 * Creates, populates and adds the per-page meta box.
 	 *
-	 * @theMikeD Pass 1
+	 * @theMikeD DONE
+	 * @todo: yoast?
 	 *
 	 * @param WP_Post $post      Post object.
 	 */
@@ -886,6 +889,7 @@ class Add_Meta_Tags {
 			);
 			return;
 		}
+
 		/**
 		 * Filter the meta box fields and their labels.
 		 *
@@ -1014,7 +1018,9 @@ class Add_Meta_Tags {
 	 * Retrieves the enabled SEO options for singular pages, as defined on the main Settings page. Defaults to everything
 	 * enabled.
 	 *
-	 * @theMikeD DONE
+	 * @todo no it doesn't
+	 *
+	 * @theMikeD Pass 1
 	 *
 	 * @param string $post_type  Post type of current post.
 	 * @return array             Array of enabled options.
@@ -1500,26 +1506,22 @@ class Add_Meta_Tags {
 	}
 
 	/**
-	 * Filter the title generated for the document head section and modify it as required.
+	 * Filters the page title used in the document head. Filtered via document_title_parts().
 	 *
-	 * @theMikeD Pass 1
+	 * @theMikeD DONE
 	 *
-	 * @param string $title         The default post title.
-	 * @param string $sep           The separator, used between title fragments.
-	 * @param string $seplocation   Where the separator should be used, on the left or right.
-	 * @return mixed|string         The adjusted title
+	 * @param array $title The array of title fragments. See wp_get_document_title() for array elements
+	 * @return array
 	 */
-	public function filter_the_title( $title, $sep = '', $seplocation = '' ) {
-		// md_log( __FUNCTION__ );
+	public function filter__the_title_parts( $title ) {
 		global $posts;
-		// @todo: is supported post type
-		if ( ! is_single() && ! is_page() ) {
+
+		if ( ! is_single() && ! is_page() || ! $this->is_supported_post_type( $posts[0]->post_type ) ) {
 			return $title;
 		}
 
 		$cmpvalues = $this->get_enabled_singular_options( $posts[0]->post_type );
-
-		if ( ! isset( $cmpvalues['mt_seo_title'] ) || true !== $cmpvalues['mt_seo_title'] ) {
+		if ( ! isset( $cmpvalues['mt_seo_title'] ) || ! $cmpvalues['mt_seo_title'] ) {
 			return $title;
 		}
 
@@ -1528,25 +1530,32 @@ class Add_Meta_Tags {
 			return $title;
 		}
 
-		$mt_seo_title = str_replace( '%title%', $title, $mt_seo_title );
+		$mt_seo_title = $this->do_title_placeholder_substitutions( $title['title'], $mt_seo_title );
 		$mt_seo_title = wp_strip_all_tags( $mt_seo_title );
 
-		// @todo: add docblock
-		if ( apply_filters( 'mt_seo_title_append_separator', true ) && ! empty( $sep ) ) {
-			if ( 'right' === $seplocation ) {
-				$mt_seo_title .= " $sep ";
-			} else {
-				$mt_seo_title = " $sep " . $mt_seo_title;
-			}
-		}
-		return $mt_seo_title;
+		$title['title'] = $mt_seo_title;
+		return $title;
+	}
+
+
+	/**
+	 * Does all required string substitutions for the title string.
+	 *
+	 * @theMikeD DONE
+	 *
+	 * @param string $title      Original page title
+	 * @param string $seo_title  Title string taken from post meta
+	 * @return string
+	 */
+	public function do_title_placeholder_substitutions( $title, $seo_title ) {
+		return (string) str_replace( '%title%', $title, $seo_title );
 	}
 
 
 	/**
 	 * Determines if a supplied post type is supported or not.
 	 *
-	 * @theMikeD Pass 1
+	 * @theMikeD DONE
 	 *
 	 * @param string $post_type The post type name.
 	 *
@@ -1561,7 +1570,7 @@ class Add_Meta_Tags {
 	/**
 	 * Gets the post types stored in the options table
 	 *
-	 * @theMikeD Pass 1
+	 * @theMikeD DONE
 	 *
 	 * @param bool $return_hash     If true, return the hash as taken from the options get.
 	 *                              If false, return the post type names as a simple array.
@@ -1577,7 +1586,12 @@ class Add_Meta_Tags {
 		$stored_post_types['post'] = 1;
 		$stored_post_types['page'] = 1;
 
-		// @todo: add doc block
+		/**
+		 * Modify the list of supported post types. The array contains the list of post types that were set
+		 * as supported in the options panel UI.
+		 *
+		 * @param array $stored_post_types Array of post type objects
+		 */
 		$supported_post_types = apply_filters( 'add_meta_tags_supported_post_types', $stored_post_types );
 
 		if ( $return_hash ) {
@@ -1591,7 +1605,9 @@ class Add_Meta_Tags {
 	/**
 	 * Gets the list of non-built-in post types enables in the system.
 	 *
-	 * @theMikeD Pass 1
+	 * @theMikeD DONE
+	 *
+	 * @todo: Should I cache this like I do with get_saved_options?
 	 *
 	 * @return array
 	 */
@@ -1604,7 +1620,6 @@ class Add_Meta_Tags {
 			),
 			'objects'
 		);
-
 		/**
 		 * Modify the list of registered post types. The array contains the non-built-in post types that have
 		 * public = true and show_ui = true.
@@ -1617,6 +1632,8 @@ class Add_Meta_Tags {
 
 	/**
 	 * Small helper function to indicate if valid custom post types are present. Aids in options panel creation.
+	 *
+	 * @theMikeD DONE
 	 *
 	 * @return bool
 	 */
@@ -1633,7 +1650,7 @@ class Add_Meta_Tags {
 	/**
 	 * Converts all entries of an array into boolean using a simple cast.
 	 *
-	 * @theMikeD Pass 1
+	 * @theMikeD DONE
 	 *
 	 * @param array $array Source array.
 	 * @return array
@@ -1650,7 +1667,7 @@ class Add_Meta_Tags {
 	/**
 	 * Filters the description meta tag text. See code for how.
 	 *
-	 * @theMikeD Pass 1
+	 * @theMikeD DONE
 	 *
 	 * @param string $desc Meta Description.
 	 * @return string
@@ -1659,7 +1676,6 @@ class Add_Meta_Tags {
 		$desc = stripslashes( $desc );
 		$desc = wp_strip_all_tags( $desc );
 		$desc = htmlspecialchars( $desc );
-		// $desc = preg_replace('/(\n+)/', ' ', $desc);
 		// Collapse all whitespace to a single space, in two steps
 		$desc = preg_replace( '/([\n \t\r]+)/', ' ', $desc );
 		$desc = preg_replace( '/( +)/', ' ', $desc );
