@@ -52,6 +52,7 @@ limitations under the License.
 @todo add message about tags and cats from old single entry options page to meta box
 @todo: looks like this applies automatically to CPT that are hidden, such as with seo-auto-linker plugin
 @todo: revisit the post types this applies to and add a filter for them
+@todo: add placeholder to allow keywords substitution for named custom taxonomies
 
 Things I'd like to do but would be breaking changes
 @todo: change filter names to be more descriptive. ex.: amt_desc_value to amt_max_description_length
@@ -170,11 +171,11 @@ class Add_Meta_Tags {
 
 		// These are the field names and values used on the post edit screen for supported post types.
 		$this->mt_seo_fields = array(
-			'mt_seo_title'            => array( __( 'Title (optional) :', 'add-meta-tags' ), 'text', __( 'The text entered here will alter the &lt;title&gt; tag using the wp_title() function. Use <code>%title%</code> to include the original title or leave empty to keep original title. i.e.) altered title <code>%title%</code>', 'add-meta-tags' ) ),
-			'mt_seo_description'      => array( __( 'Description (optional) :', 'add-meta-tags' ), 'textarea', __( 'This text will be used as description meta information. Left empty a description is automatically generated i.e.) an other description text', 'add-meta-tags' ) ),
-			'mt_seo_keywords'         => array( __( 'Keywords (optional) :', 'add-meta-tags' ), 'text', __( 'Provide a comma-delimited list of keywords for your blog. Leave it empty to use the post\'s keywords for the "keywords" meta tag. When overriding the post\'s keywords, the tag <code>%cats%</code> can be used to insert the post\'s categories, add the tag <code>%tags%</code>, to include the post\'s tags i.e. keyword1, keyword2,%tags% %cats%', 'add-meta-tags' ) ), // @codingStandardsIgnoreLine: this is not gettext
-			'mt_seo_google_news_meta' => array( __( 'Google News Keywords (optional) :', 'add-meta-tags' ), 'text', __( 'Provide a comma-delimited list of keywords for your blog. You can add up to ten phrases for a given article, and all keywords are given equal value.', 'add-meta-tags' ) ),
-			'mt_seo_meta'             => array( __( 'Additional Meta tags (optional) :', 'add-meta-tags' ), 'textarea', __( 'Provide the full XHTML code of META tags you would like to be included in this post/page. i.e.) &lt;meta name="robots" content="index,follow" /&gt;', 'add-meta-tags' ) ),
+			'mt_seo_title'            => array( __( 'Title', 'add-meta-tags' ), 'text', __( 'If empty, the post title will be used. <br><b>To customize:</b> The <code>%title%</code> placeholder will be replaced with the post title.', 'add-meta-tags' ) ),
+			'mt_seo_description'      => array( __( 'Description', 'add-meta-tags' ), 'textarea', __( 'If empty, the post excerpt will be used.', 'add-meta-tags' ) ),
+			'mt_seo_keywords'         => array( __( 'Keywords', 'add-meta-tags' ), 'text', __( 'Provide a comma-delimited list of keywords. If empty, the post\'s categories and tags will be used. <br><b>To customize:</b> The <code>%cats%</code> placeholder will be replaced with the post\'s categories, and the <code>%tags%</code> placeholder will be replaced with the post\'s tags.', 'add-meta-tags' ) ), // @codingStandardsIgnoreLine: this is not gettext
+			'mt_seo_google_news_meta' => array( __( 'Google News Keywords', 'add-meta-tags' ), 'text', __( 'Provide a comma-delimited list of up to ten keywords. All keywords are given equal value. If empty, this tag will be skipped.', 'add-meta-tags' ) ),
+			'mt_seo_meta'             => array( __( 'Additional Meta tags', 'add-meta-tags' ), 'textarea', __( 'Provide the full XHTML code for each META tag to add. For example: <code>&lt;meta name="robots" content="index,follow" /&gt;</code>', 'add-meta-tags' ) ),
 		);
 	}
 
@@ -338,6 +339,7 @@ class Add_Meta_Tags {
 			}
 
 			// Custom Meta Tags. This is a fully-rendered META tag, so no need to build it up.
+            // @todo: add some kind of checks to this tag
 			if ( ! empty( $mt_seo_meta ) && true === $cmpvalues['mt_seo_meta'] ) {
 				$my_metatags .= "\n" . $mt_seo_meta;
 			}
@@ -974,7 +976,7 @@ class Add_Meta_Tags {
 				}
 				echo wp_kses(
 					'</p><p class="description">' . $field_data[2] . '</p></div></div>',
-					$this->form_get_kses_valid_tags__metabox()
+					$this->form_get_kses_valid_tags__metabox_description()
 				);
 			}
 			$tabindex++;
@@ -1280,6 +1282,33 @@ class Add_Meta_Tags {
 			),
 		);
 	}
+
+
+	/**
+	 * Gets the valid tags and attributes for use with elements related to the meta box in the post/page edit screen.
+	 *
+	 * @theMikeD DONE
+	 *
+	 * @return array
+	 */
+	private function form_get_kses_valid_tags__metabox_description() {
+		return array(
+			'b'    => true,
+			'br'    => true,
+			'code'    => true,
+			'p'     => array(
+				'class' => true,
+			),
+			'div'   => array(
+				'class' => true,
+				'id'    => true,
+			),
+			'span'  => array(
+				'class' => true,
+			),
+		);
+	}
+
 
 
 	/**
