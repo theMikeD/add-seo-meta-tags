@@ -98,14 +98,12 @@ class Add_Meta_Tags {
 	 */
 	private $options_key = 'add_meta_tags_opts';
 
-
 	/**
 	 * Slug for this class.
 	 *
 	 * @var string
 	 */
 	private $slug = 'amt_options';
-
 
 	/**
 	 * Stores the options retrieved from the DB
@@ -121,7 +119,6 @@ class Add_Meta_Tags {
 	 */
 	private $excerpt_max_length = 300;
 
-
 	/**
 	 * When the post excerpt is derived from post content, we require at least this many characters.
 	 *
@@ -136,14 +133,12 @@ class Add_Meta_Tags {
 	 */
 	private $options_page_name = '';
 
-
 	/**
 	 * The string used for the admin menu item.
 	 *
 	 * @var string
 	 */
 	private $options_page_menu_name = '';
-
 
 	/**
 	 * Stores the defaults for singular options
@@ -157,7 +152,6 @@ class Add_Meta_Tags {
 		'mt_seo_google_news_meta' => false,
 		'mt_seo_meta'             => false,
 	);
-
 
 	/**
 	 * Add_Meta_Tags constructor.
@@ -339,7 +333,7 @@ class Add_Meta_Tags {
 			}
 
 			// Custom Meta Tags. This is a fully-rendered META tag, so no need to build it up.
-            // @todo: add some kind of checks to this tag
+			// @todo: add some kind of checks to this tag
 			if ( ! empty( $mt_seo_meta ) && true === $cmpvalues['mt_seo_meta'] ) {
 				$my_metatags .= "\n" . $mt_seo_meta;
 			}
@@ -440,32 +434,6 @@ class Add_Meta_Tags {
 		}
 	}
 
-
-	/*******************************************************************************************************************
-	 * Methods related to the post edit meta box
-	 */
-
-	/**
-	 * Adds the post edit meta box for supported post types.
-	 *
-	 * @theMikeD DONE
-	 *
-	 * @param string  $post_type  The post type of the current edit page.
-	 * @param WP_Post $post       The current post object.
-	 *
-	 * @return void
-	 */
-	public function add_meta_box( $post_type, $post ) {
-		if ( $this->is_supported_post_type( $post_type ) ) {
-			add_meta_box(
-				'mt_seo',
-				$this->options_page_name,
-				array( $this, 'do_meta_box' ),
-				$post_type,
-				'normal'
-			);
-		}
-	}
 
 
 	/*******************************************************************************************************************
@@ -834,6 +802,7 @@ class Add_Meta_Tags {
 		echo wp_kses( 'Notes on other specific page types.', self::get_kses_valid_tags__message() );
 	}
 
+
 	/**
 	 * Displays the HTML form element for the taxonomy_archive_notes option in the admin options page.
 	 *
@@ -860,9 +829,32 @@ class Add_Meta_Tags {
 	}
 
 
+
 	/*******************************************************************************************************************
 	 * Methods related to the post edit page meta box.
 	 */
+
+	/**
+	 * Adds the post edit meta box for supported post types.
+	 *
+	 * @theMikeD DONE
+	 *
+	 * @param string  $post_type  The post type of the current edit page.
+	 * @param WP_Post $post       The current post object.
+	 *
+	 * @return void
+	 */
+	public function add_meta_box( $post_type, $post ) {
+		if ( $this->is_supported_post_type( $post_type ) ) {
+			add_meta_box(
+				'mt_seo',
+				$this->options_page_name,
+				array( $this, 'do_meta_box' ),
+				$post_type,
+				'normal'
+			);
+		}
+	}
 
 	/**
 	 * Creates, populates and adds the per-page meta box.
@@ -943,7 +935,7 @@ class Add_Meta_Tags {
 			$this->form_get_kses_valid_tags__metabox()
 		);
 		echo wp_kses(
-			'<p class="desc"><span class="date">' . date( 'd M Y', strtotime( get_the_time( 'r' ) ) ) . '</span> &ndash; <span class="content">' . substr( $mt_seo_description, 0, 140 ) . '</span></p>',
+			'<p class="desc"><span class="date">' . date( 'd M Y', strtotime( get_the_time( 'r' ) ) ) . '</span> &ndash; <span class="content">' . substr( $mt_seo_description, 0, 140 ) . '</span></p>', // @codingStandardsIgnoreLine: var is defined indirectly in foreach loop above
 			$this->form_get_kses_valid_tags__metabox()
 		);
 		echo wp_kses(
@@ -989,7 +981,6 @@ class Add_Meta_Tags {
 		// delete_post_meta( $post->ID, '_yoast_wpseo_metadesc' );
 		// delete_post_meta( $post->ID, '_yoast_wpseo_title' );
 	}
-
 
 
 
@@ -1149,10 +1140,10 @@ class Add_Meta_Tags {
 	}
 
 
+
 	/*******************************************************************************************************************
 	 * Helper methods.
 	 */
-
 
 	/**
 	 * Gets the valid tags and attributes for use with checkbox elements in the admin options page and meta boxes.
@@ -1294,21 +1285,20 @@ class Add_Meta_Tags {
 	private function form_get_kses_valid_tags__metabox_description() {
 		return array(
 			'b'    => true,
-			'br'    => true,
-			'code'    => true,
-			'p'     => array(
+			'br'   => true,
+			'code' => true,
+			'p'    => array(
 				'class' => true,
 			),
-			'div'   => array(
+			'div'  => array(
 				'class' => true,
 				'id'    => true,
 			),
-			'span'  => array(
+			'span' => array(
 				'class' => true,
 			),
 		);
 	}
-
 
 
 	/**
@@ -1534,6 +1524,7 @@ class Add_Meta_Tags {
 		<?php
 	}
 
+
 	/**
 	 * Filters the page title used in the document head. Filtered via document_title_parts().
 	 *
@@ -1710,6 +1701,7 @@ class Add_Meta_Tags {
 		$desc = preg_replace( '/( +)/', ' ', $desc );
 		return trim( $desc );
 	}
+
 
 	/**
 	 * Using the 'checked' function will fail if the option being checked is stored in an array and that array key doesn't
