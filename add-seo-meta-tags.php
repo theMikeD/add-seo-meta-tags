@@ -273,15 +273,14 @@ class Add_Meta_Tags {
 
 		$cmpvalues = $this->get_enabled_singular_options( $post->post_type );
 
-		$my_metatags = '';
+		$metatags = array();
 
 		// Add META tags to Singular pages.
 		if ( is_singular() ) {
 			// Only do stuff if any of the enabled options is true.
-			if ( ! in_array( true, $cmpvalues, true ) ) {
+			if ( ! in_array( '1', $cmpvalues, true ) ) {
 				return;
 			}
-
 			foreach ( (array) $this->mt_seo_fields as $field_name => $field_data ) {
 				${$field_name} = (string) get_post_meta( $post->ID, $field_name, true );
 
@@ -309,7 +308,7 @@ class Add_Meta_Tags {
 			1. The post meta value for 'mt_seo_description'
 			2. The post excerpt
 			*/
-			if ( true === $cmpvalues['mt_seo_description'] ) {
+			if ( '1' === $cmpvalues['mt_seo_description'] ) {
 				$meta_description = '';
 
 				if ( ! empty( $mt_seo_description ) ) {
@@ -326,39 +325,31 @@ class Add_Meta_Tags {
 				$meta_description = apply_filters( 'amt_meta_description', $meta_description );
 
 				if ( ! empty( $meta_description ) ) {
-					$my_metatags .= "\n" . '<meta name="description" content="' . esc_attr( $this->clean_meta_description( $meta_description ) ) . '" />';
+					$metatags[] = '<meta name="description" content="' . esc_attr( $this->clean_meta_description( $meta_description ) ) . '" />';
 				}
 			}
 
 			// Custom Meta Tags. This is a fully-rendered META tag, so no need to build it up.
-			// @todo: add some kind of checks to this tag
-			if ( ! empty( $mt_seo_meta ) && true === $cmpvalues['mt_seo_meta'] ) {
-				$my_metatags .= "\n" . $mt_seo_meta;
+			if ( ! empty( $mt_seo_meta ) && '1' === $cmpvalues['mt_seo_meta'] ) {
+				// This is a potential difference; no escaping was done on this value in previous versions.
+				$metatags[] = $this->clean_meta_tags( $mt_seo_meta );
 			}
 
 			// Google News Meta. From post meta field "mt-seo-google-news-meta.
-			if ( ! empty( $mt_seo_google_news_meta ) && true === $cmpvalues['mt_seo_google_news_meta'] ) {
-				$my_metatags .= '<meta name="news_keywords" content="' . esc_attr( $mt_seo_google_news_meta ) . '" />';
+			if ( ! empty( $mt_seo_google_news_meta ) && '1' === $cmpvalues['mt_seo_google_news_meta'] ) {
+				$metatags[] = '<meta name="news_keywords" content="' . esc_attr( $mt_seo_google_news_meta ) . '" />';
 			}
 
 			/*
-			Title
-			Rewrite the title in case a special title is given
-			if ( !empty( $mt_seo_title ) ) {
-			see function mt_seo_rewrite_tite() which is added as filter for wp_title
-			@md: this is not true
-			@todo: add filter to title?
-			}
+			Title is handled using filters
+			*/
+
+			/*
 			Keywords. Created in the following order
 			1. The post meta value for 'mt_seo_keywords'
 			2. The post's categories and tags.
-			@todo: add docs for string substitution done in this section
-			%cats% is replaced by the post's categories.
-			%tags% us replaced by the post's tags.
-			NOTE: if self::INCLUDE_KEYWORDS_IN_SINGLE_POSTS is FALSE, then keywords
-			metatag is not added to single posts.
 			*/
-			if ( true === $cmpvalues['mt_seo_keywords'] ) {
+			if ( '1' === $cmpvalues['mt_seo_keywords'] ) {
 				if ( ( self::INCLUDE_KEYWORDS_IN_SINGLE_POSTS && is_single() ) || is_page() ) {
 					if ( ! empty( $mt_seo_keywords ) ) {
 						// If there is a custom field, use it.
@@ -368,13 +359,13 @@ class Add_Meta_Tags {
 							// Also, the %tags% tag is replaced by the post's tags.
 							$mt_seo_keywords = str_replace( '%tags%', $this->get_post_tags(), $mt_seo_keywords );
 						}
-						$my_metatags .= "\n" . '<meta name="keywords" content="' . esc_attr( strtolower( $mt_seo_keywords ) ) . '" />';
+						$metatags[] = '<meta name="keywords" content="' . esc_attr( strtolower( $mt_seo_keywords ) ) . '" />';
 					} elseif ( is_single() ) {
 						// Add categories and tags for keywords.
 						$post_keywords = strtolower( $this->get_post_categories() );
 						$post_tags     = strtolower( $this->get_post_tags() );
 
-						$my_metatags .= "\n" . '<meta name="keywords" content="' . esc_attr( $post_keywords . ', ' . $post_tags ) . '" />';
+						$metatags[] = '<meta name="keywords" content="' . esc_attr( $post_keywords . ', ' . $post_tags ) . '" />';
 					}
 				}
 			}
@@ -389,46 +380,58 @@ class Add_Meta_Tags {
 			*/
 			if ( empty( $site_description ) ) {
 				// If $site_description is empty, then use the blog description from the options.
-				$my_metatags .= "\n" . '<meta name="description" content="' . esc_attr( $this->clean_meta_description( get_bloginfo( 'description' ) ) ) . '" />';
+				$metatags[] = '<meta name="description" content="' . esc_attr( $this->clean_meta_description( get_bloginfo( 'description' ) ) ) . '" />';
 			} else {
 				// If $site_description has been set, then use it in the description meta-tag.
-				$my_metatags .= "\n" . '<meta name="description" content="' . esc_attr( $this->clean_meta_description( $site_description ) ) . '" />';
+				$metatags[] = '<meta name="description" content="' . esc_attr( $this->clean_meta_description( $site_description ) ) . '" />';
 			}
 
 			// Keywords.
 			if ( empty( $site_keywords ) ) {
 				// If $site_keywords is empty, then all the blog's categories are added as keywords.
-				$my_metatags .= "\n" . '<meta name="keywords" content="' . esc_attr( $this->get_site_categories() ) . '" />';
+				$metatags[] = '<meta name="keywords" content="' . esc_attr( $this->get_site_categories() ) . '" />';
 			} else {
 				// If $site_keywords has been set, then these keywords are used.
-				$my_metatags .= "\n" . '<meta name="keywords" content="' . esc_attr( $site_keywords ) . '" />';
+				$metatags[] = '<meta name="keywords" content="' . esc_attr( $site_keywords ) . '" />';
 			}
 		} elseif ( is_tax() || is_tag() || is_category() ) {
 			// taxonomy archive page.
-			// @todo: this does work for CPT as well, need to add that to main panel.
 			$term_desc = term_description();
 			if ( $term_desc ) {
-				$my_metatags .= "\n" . '<meta name="description" content="' . esc_attr( $this->clean_meta_description( $term_desc ) ) . '" />';
+				$metatags[] = '<meta name="description" content="' . esc_attr( $this->clean_meta_description( $term_desc ) ) . '" />';
 			}
 
 			// The keyword is the term name.
 			$term_name = single_term_title( '', false );
 			if ( $term_name ) {
-				$my_metatags .= "\n" . '<meta name="keywords" content="' . esc_attr( strtolower( $term_name ) ) . '" />';
+				$metatags[] = '<meta name="keywords" content="' . esc_attr( strtolower( $term_name ) ) . '" />';
 			}
 		}
 
 		if ( $site_wide_meta ) {
-			$my_metatags .= $this->clean_meta_tags( $site_wide_meta );
+			$metatags[] = $this->clean_meta_tags( $site_wide_meta );
 		}
 
-		// WP.com -- allow filtering of the meta tags.
-		// @todo: add docblock.
-		$my_metatags = apply_filters( 'amt_metatags', $my_metatags );
+		/**
+		 * Filter the generated meta tags. New filter to allow for easier use by passing an array instead of a string.
+		 *
+		 * @param array $metatags   Contains each derived metatag as an array entry.
+		 */
+		$metatags = apply_filters( 'amt_metatags_array', $metatags );
 
-		if ( $my_metatags ) {
-			// @todo: wp_kses
-			echo wp_kses( $my_metatags . PHP_EOL, $this->get_kses_valid_tags__metatags() );
+		if ( is_array( $metatags ) && ! empty( $metatags ) ) {
+			$metatags_as_string = implode( "\n", $metatags );
+
+			/**
+			 * Filter the generated meta tags. Preserved filter from old code that sends the metatags as a string.
+			 *
+			 * @param array $metatags_as_string   Contains each derived metatag as a return-separated string.
+			 */
+			$metatags_as_string = apply_filters( 'amt_metatags', $metatags_as_string );
+
+			if ( $metatags_as_string ) {
+				echo wp_kses( $metatags_as_string . PHP_EOL, $this->get_kses_valid_tags__metatags() );
+			}
 		}
 	}
 
@@ -1106,8 +1109,6 @@ class Add_Meta_Tags {
 			$data = trim( stripslashes( $data ) );
 		}
 
-		// md_log( "Old: $old_data" );
-		// md_log( "New: $data" );
 		// Nothing new, and we're not deleting the old.
 		if ( empty( $data ) && empty( $old_data ) ) {
 			return;
