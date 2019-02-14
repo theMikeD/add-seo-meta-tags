@@ -57,6 +57,7 @@ limitations under the License.
 Things I'd like to do but would be breaking changes
 @todo: change filter names to be more descriptive. ex.: amt_desc_value to amt_max_description_length
 @todo: add separate sections for each custom post type (right now CPT gets treated teh same as post)
+@todo: the character counts on the options panel are broken and not formatted correctly.
 
 */
 
@@ -276,14 +277,7 @@ class Add_Meta_Tags {
 
 		// Add META tags to Singular pages.
 		if ( is_singular() ) {
-			/*
-			// MD: This will never run
-			// if ( empty( $cmpvalues ) ) {
-			// return;
-			// }
-			// MD: But this will
 			// Only do stuff if any of the enabled options is true.
-			*/
 			if ( ! in_array( true, $cmpvalues, true ) ) {
 				return;
 			}
@@ -292,22 +286,22 @@ class Add_Meta_Tags {
 				${$field_name} = (string) get_post_meta( $post->ID, $field_name, true );
 
 				/*
-				// @todo: Do we care about yoast?
-				// Back-compat with Yoast SEO meta keys
-				// if ( '' == ${$field_name} ) {
-				// switch ( $field_name ) {
-				// case 'mt_seo_title':
-				// $yoast_field_name = '_yoast_wpseo_title';
-				// break;
-				// case 'mt_seo_description':
-				// $yoast_field_name = '_yoast_wpseo_metadesc';
-				// break;
-				// }
-				// if ( isset( $yoast_field_name ) ) {
-				// ${$field_name} = (string) get_post_meta( $posts[0]->ID, $yoast_field_name, true );
-				// }
-				// }
+				 * yoast functionality code is preserved from previous versions, updated only for CS. It is untested.
 				*/
+				// Back-compat with Yoast SEO meta keys
+				if ( '' === ${$field_name} ) {
+					switch ( $field_name ) {
+						case 'mt_seo_title':
+							$yoast_field_name = '_yoast_wpseo_title';
+							break;
+						case 'mt_seo_description':
+							$yoast_field_name = '_yoast_wpseo_metadesc';
+							break;
+					}
+					if ( isset( $yoast_field_name ) ) {
+						${$field_name} = (string) get_post_meta( $posts[0]->ID, $yoast_field_name, true );
+					}
+				}
 			}
 
 			/*
@@ -324,7 +318,11 @@ class Add_Meta_Tags {
 					$meta_description = $this->get_the_excerpt( $post );
 				}
 
-				// @todo: add docblock
+				/**
+				 * Filter the description for a singular post.
+				 *
+				 * @param string Contents of the post description field.
+				 */
 				$meta_description = apply_filters( 'amt_meta_description', $meta_description );
 
 				if ( ! empty( $meta_description ) ) {
@@ -595,7 +593,7 @@ class Add_Meta_Tags {
 	public function do_site_wide_meta_html() {
 		$stored_options = $this->get_saved_options();
 		echo wp_kses(
-			'<p>' . __( 'Provide the full XHTML code of META tags you would like to be included in <strong>every page of your site</strong>.', 'add-meta-tags' ) . '</p>',
+			'<p>' . __( 'Provide the full XHTML code for each META tag to add to all pages.', 'add-meta-tags' ) . '</p>',
 			self::get_kses_valid_tags__message()
 		);
 		echo wp_kses(
@@ -630,7 +628,7 @@ class Add_Meta_Tags {
 	 */
 	public function do_home_description_html() {
 		$stored_options = $this->get_saved_options();
-		echo wp_kses( '<p>' . __( 'This text will be used in the "description" meta tag on the <strong>homepage only</strong>.</p><p>If this is left empty, then description from the Tagline (found on the General Options page) will be used.', 'add-meta-tags' ) . '</p>', self::get_kses_valid_tags__message() );
+		echo wp_kses( '<p>' . __( 'This text will be used in the "description" meta tag on the homepage only.</p><p>If empty, the tagline (found on the General Options page) will be used.', 'add-meta-tags' ) . '</p>', self::get_kses_valid_tags__message() );
 		echo wp_kses( "<textarea name='{$this->options_key}[site_description]' class='code' id='mt_seo_description'>" . esc_textarea( stripslashes( $stored_options['site_description'] ) ) . '</textarea>', self::get_kses_valid_tags__textarea() );
 	}
 
@@ -644,7 +642,7 @@ class Add_Meta_Tags {
 	 */
 	public function do_home_keywords_html() {
 		$stored_options = $this->get_saved_options();
-		echo wp_kses( '<p>' . __( 'These keywords will be used for the "keywords" meta tag on the <strong>homepage only</strong>. Provide a comma-delimited list of keywords.</p><p>If this field is left <strong>empty</strong>, then all of your blog\'s categories, except for the "Uncategorized" category, will be used as keywords for the "keywords" meta tag.', 'add-meta-tags' ) . '</p>', self::get_kses_valid_tags__message() );
+		echo wp_kses( '<p>' . __( 'Provide a comma-delimited list of keywords for the homepage only. </p><p>If empty, all categories (except for the "Uncategorized" category) will be used.', 'add-meta-tags' ) . '</p>', self::get_kses_valid_tags__message() );
 		echo wp_kses( "<textarea name='{$this->options_key}[site_keywords]' class='code'>" . esc_textarea( stripslashes( $stored_options['site_keywords'] ) ) . '</textarea>', self::get_kses_valid_tags__textarea() );
 	}
 
@@ -860,7 +858,6 @@ class Add_Meta_Tags {
 	 * Creates, populates and adds the per-page meta box.
 	 *
 	 * @theMikeD DONE
-	 * @todo: yoast?
 	 *
 	 * @param WP_Post $post      Post object.
 	 */
@@ -897,22 +894,22 @@ class Add_Meta_Tags {
 			${$field_name} = (string) get_post_meta( $post->ID, $field_name, true );
 
 			/*
-			@todo: Do we care about yoast?
-			back-compat with Yoast SEO
-			if ( '' == ${$field_name} ) {
-			switch ( $field_name ) {
-			case 'mt_seo_title':
-			$yoast_field_name = '_yoast_wpseo_title';
-			break;
-			case 'mt_seo_description':
-			$yoast_field_name = '_yoast_wpseo_metadesc';
-			break;
-			}
-			if ( isset( $yoast_field_name ) ) {
-			${$field_name} = (string) get_post_meta( $post->ID, $yoast_field_name, true );
-			}
-			}
+			 * yoast functionality code is preserved from previous versions, updated only for CS. It is untested.
 			*/
+			// back-compat with Yoast SEO
+			if ( '' === ${$field_name} ) {
+				switch ( $field_name ) {
+					case 'mt_seo_title':
+						$yoast_field_name = '_yoast_wpseo_title';
+						break;
+					case 'mt_seo_description':
+						$yoast_field_name = '_yoast_wpseo_metadesc';
+						break;
+				}
+				if ( isset( $yoast_field_name ) ) {
+					${$field_name} = (string) get_post_meta( $post->ID, $yoast_field_name, true );
+				}
+			}
 		}
 
 		// Set up the title.
@@ -976,10 +973,12 @@ class Add_Meta_Tags {
 
 		wp_nonce_field( 'mt-seo', 'mt_seo_nonce', false );
 
-		// @todo: Do we care about yoast?
+		/*
+		 * yoast functionality code is preserved from previous versions, updated only for CS. It is untested.
+		*/
 		// Remove old Yoast data
-		// delete_post_meta( $post->ID, '_yoast_wpseo_metadesc' );
-		// delete_post_meta( $post->ID, '_yoast_wpseo_title' );
+		delete_post_meta( $post->ID, '_yoast_wpseo_metadesc' );
+		delete_post_meta( $post->ID, '_yoast_wpseo_title' );
 	}
 
 
@@ -1055,12 +1054,12 @@ class Add_Meta_Tags {
 			return;
 		}
 
+		// Checks user caps.
 		$post_type_object = get_post_type_object( $_POST['post_type'] ); // @codingStandardsIgnoreLine: this is fine
 		if ( ! current_user_can( $post_type_object->cap->edit_post, $post_id ) ) {
 			return;
 		}
 
-		// Checks user caps.
 		foreach ( (array) $this->mt_seo_fields as $field_name => $field_data ) {
 			$this->save_meta_field( $post_id, $field_name );
 		}
@@ -1134,6 +1133,9 @@ class Add_Meta_Tags {
 			}
 		}
 
+		/*
+		 * yoast functionality code is preserved from previous versions, updated only for CS. It is untested.
+		*/
 		// Remove old Yoast data.
 		delete_post_meta( $post_id, '_yoast_wpseo_metadesc' );
 		delete_post_meta( $post_id, '_yoast_wpseo_title' );
@@ -1322,7 +1324,7 @@ class Add_Meta_Tags {
 	 * Get the excerpt while outside the loop. Uses the manually crafted excerpt if found. Otherwise creates a string
 	 * based on the post content according to the following rules:
 	 *   - Retrieves $excerpt_max_len characters from the post content after stripping shorcodes and HTML.
-	 *   - If the derived excerpt contains no period, an ellipsis entitiy is appended and that string is used.
+	 *   - If the derived excerpt contains no period, an ellipsis entity is appended and that string is used.
 	 *   - If the derived excerpt contains a period and after truncating on that period the excerpt is > $desc_min_length, that
 	 *     is used. Otherwise, an ellipsis entity is appended and that string is used.
 	 *
