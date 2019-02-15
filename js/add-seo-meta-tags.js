@@ -83,8 +83,13 @@
 			var limit = $title.attr( 'data-limit' ) || amt_values.max_title_length;
 
 			// The title, taken from the post edit screen.
-			var originalTitle = $( '#title' ).val();
-
+			// @todo: this is not working with Gutenburg, I think because the title block is not rendered yet
+			var originalTitle;
+			if ( $( '#title' ).length ) {
+				originalTitle = $( '#title' ).val();
+			} else if ( $( '#post-title-0' ).length ) {
+				originalTitle = $('#post-title-0').val();
+			}
 			if ( $title.val() === '' ) {
 				// If the title text entry area is blank, then we use the page title
 				$( "#mt_snippet .title" ).html( jQuery( '<p>' + originalTitle + '</p>' ).text() );
