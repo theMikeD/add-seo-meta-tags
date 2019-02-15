@@ -1066,7 +1066,7 @@ class Add_Meta_Tags {
 		}
 
 		foreach ( (array) $this->mt_seo_fields as $field_name => $field_data ) {
-			$this->save_meta_field( $post_id, $field_name );
+			self::save_meta_field( $post_id, $field_name );
 		}
 	}
 
@@ -1079,7 +1079,7 @@ class Add_Meta_Tags {
 	 * @param int    $post_id     The post id the meta will be saved against.
 	 * @param string $field_name  The field to save.
 	 */
-	public function save_meta_field( $post_id, $field_name ) {
+	private function save_meta_field( $post_id, $field_name ) {
 		// Checks to see if we're POSTing.
 		if ( ! isset( $_SERVER['REQUEST_METHOD'] ) || 'post' !== strtolower( $_SERVER['REQUEST_METHOD'] ) || ! isset( $_POST[ $field_name ] ) ) { // @codingStandardsIgnoreLine: these are fine
 			return;
