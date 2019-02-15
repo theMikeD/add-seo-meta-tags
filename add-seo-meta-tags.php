@@ -48,15 +48,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 ---
-@todo: test CPT, CT, tag, category archive and term pages
-@todo add message about tags and cats from old single entry options page to meta box
-@todo: looks like this applies automatically to CPT that are hidden, such as with seo-auto-linker plugin
-@todo: revisit the post types this applies to and add a filter for them
-@todo: add placeholder to allow keywords substitution for named custom taxonomies
 
 Things I'd like to do but would be breaking changes
 @todo: change filter names to be more descriptive. ex.: amt_desc_value to amt_max_description_length
-@todo: add separate sections for each custom post type (right now CPT gets treated teh same as post)
+@todo: add separate sections for each custom post type (right now CPT gets treated the same as post)
 @todo: the character counts on the options panel are broken and not formatted correctly.
 
 */
@@ -215,6 +210,17 @@ class Add_Meta_Tags {
 		global $pagenow;
 		$supported_post_types = $this->get_supported_post_types();
 
+        $viewing_page = '';
+        // Register the script for the general options page
+		if ( in_array( $pagenow, array( 'options-general.php' ), true ) ) {
+			$viewing_page = 'general';
+		}
+
+		// Register the script for the singular pages
+		if ( ( in_array( $pagenow, array( 'post.php', 'post-new.php', true ), true ) && in_array( get_post_type(), $supported_post_types, true ) ) ) {
+			$viewing_page = 'singular';
+		}
+
 		// Enqueue the CSS, and equeue and localize the JS, if we're on a supported post type page, or the option page.
 		if ( ( in_array( $pagenow, array( 'options-general.php' ), true ) )
 			|| ( in_array( $pagenow, array( 'post.php', 'post-new.php', true ), true ) && in_array( get_post_type(), $supported_post_types, true ) ) ) {
@@ -244,6 +250,7 @@ class Add_Meta_Tags {
 				'title_label'      => __( 'title', 'add-meta-tags' ),
 				'max_desc_length'  => $max_desc_length,
 				'max_title_length' => $max_title_length,
+                'viewing_page'     => $viewing_page,
 			);
 			wp_localize_script( 'add-seo-meta-tags', 'amt_values', $values_to_send );
 		}
@@ -1038,7 +1045,7 @@ class Add_Meta_Tags {
 
 	/**
 	 * Calls the save routine if required. For backwards-compatibility reasons, each metatag's post meta value is
-     * saved individually instead of as an array with the general options.
+	 * saved individually instead of as an array with the general options.
 	 *
 	 * @theMikeD DONE
 	 *
@@ -1388,7 +1395,7 @@ class Add_Meta_Tags {
 	 *
 	 * Provides a filter amt_get_the_categories() to modify the categories list before returning it.
 	 *
-	 * @theMikeD Pass 1
+	 * @theMikeD DONE
 	 *
 	 * @return bool|string  Comma-separated list of post's categories
 	 */
@@ -1417,7 +1424,7 @@ class Add_Meta_Tags {
 	 *
 	 * Provides a filter amt_get_the_tags() to modify the tags list before returning it.
 	 *
-	 * @theMikeD Pass 1
+	 * @theMikeD DONE
 	 *
 	 * @return bool|string  Comma-separated list of post's tags
 	 */
@@ -1446,7 +1453,7 @@ class Add_Meta_Tags {
 	/**
 	 * Get the 20 most popular categories, optionally excluding 'Uncategorized' from the list.
 	 *
-	 * @theMikeD Pass 1
+	 * @theMikeD DONE
 	 *
 	 * @param bool $no_uncategorized    If true, skip 'Uncategorized' Otherwise, include it.
 	 * @return string                   Comma-separated list of site's 20 top categories, or empty string.
@@ -1491,7 +1498,7 @@ class Add_Meta_Tags {
 	/**
 	 * Cleans out unwanted characters for use with meta tags.
 	 *
-	 * @theMikeD Pass 1
+	 * @theMikeD DONE
 	 *
 	 * @param string $text The text to clean.
 	 * @return string
@@ -1506,10 +1513,8 @@ class Add_Meta_Tags {
 	/**
 	 * Echos the styles used by the in-page meta box, including the Google search result preview
 	 *
-	 * @theMikeD Pass 1
+	 * @theMikeD DONE
 	 *
-	 * @todo: only do this on supported post types
-	 * @todo: wp_kses for this?
 	 * @return void
 	 */
 	public function do_inline_styles() {
@@ -1635,8 +1640,6 @@ class Add_Meta_Tags {
 	 *
 	 * @theMikeD DONE
 	 *
-	 * @todo: Should I cache this like I do with get_saved_options?
-	 *
 	 * @return array
 	 */
 	public function get_registered_post_types() {
@@ -1648,6 +1651,7 @@ class Add_Meta_Tags {
 			),
 			'objects'
 		);
+
 		/**
 		 * Modify the list of registered post types. The array contains the non-built-in post types that have
 		 * public = true and show_ui = true.

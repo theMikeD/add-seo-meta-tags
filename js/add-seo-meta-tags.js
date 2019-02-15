@@ -14,7 +14,7 @@
 			$title = $( '#mt_seo_title' ),
 			$desc  = $( '#mt_seo_description' );
 
-			if ( $title.length ) {
+			if ( $title.length && 'singular' === amt_values.viewing_page ) {
 				t.buildCounter( $title, parseInt( amt_values.max_title_length ), amt_values.title_label );
 
 				$title.keyup(
@@ -67,7 +67,9 @@
 			html     = html.replace( /%%COUNT%%/, '<span class="count">' + limit + '</span>' );
 			$counter.html( html );
 
-			t.updateTitle();
+			if ( 'singular' === amt_values.viewing_page ) {
+				t.updateTitle();
+			}
 			t.updateDesc();
 		},
 
@@ -88,7 +90,7 @@
 				$( "#mt_snippet .title" ).html( jQuery( '<p>' + originalTitle + '</p>' ).text() );
 				var count = originalTitle.length;
 			} else {
-				// Otherwise, use what we have after subbing in teh page title for hte %title% placeholder
+				// Otherwise, use what we have after subbing in the page title for the %title% placeholder
 				$( "#mt_snippet .title" ).html( jQuery( '<p>' + $title.val().replace( '%title%', originalTitle ).substring( 0, limit ) + '</p>' ).text() );
 				// If the placeholder for the page title is used, sub that in before counting.
 				var count = $title.val().replace( '%title%', originalTitle ).length;
