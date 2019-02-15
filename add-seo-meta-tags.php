@@ -210,8 +210,8 @@ class Add_Meta_Tags {
 		global $pagenow;
 		$supported_post_types = $this->get_supported_post_types();
 
-        $viewing_page = '';
-        // Register the script for the general options page
+		$viewing_page = '';
+		// Register the script for the general options page
 		if ( in_array( $pagenow, array( 'options-general.php' ), true ) ) {
 			$viewing_page = 'general';
 		}
@@ -250,7 +250,7 @@ class Add_Meta_Tags {
 				'title_label'      => __( 'title', 'add-meta-tags' ),
 				'max_desc_length'  => $max_desc_length,
 				'max_title_length' => $max_title_length,
-                'viewing_page'     => $viewing_page,
+				'viewing_page'     => $viewing_page,
 			);
 			wp_localize_script( 'add-seo-meta-tags', 'amt_values', $values_to_send );
 		}
