@@ -190,8 +190,8 @@ class Add_Meta_Tags {
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_scripts_and_styles' ) );
 		add_action( 'add_meta_boxes', array( $this, 'add_meta_box' ), 10, 2 );
 
-		add_action( 'save_page', array( $this, 'save_singular_meta' ) );
-		add_action( 'save_post', array( $this, 'save_singular_meta' ) );
+		add_action( 'save_page', array( $this, 'save_meta_for_singular_pages' ) );
+		add_action( 'save_post', array( $this, 'save_meta_for_singular_pages' ) );
 
 		// Front end hooks.
 		add_action( 'wp_head', array( $this, 'do_meta_tags' ), 0 );
@@ -253,7 +253,7 @@ class Add_Meta_Tags {
 	/**
 	 * Creates and echoes the meta tag block for the page header.
 	 *
-	 * @theMikeD Pass 1
+	 * @theMikeD DONE
 	 *
 	 * @return void
 	 */
@@ -1011,11 +1011,9 @@ class Add_Meta_Tags {
 
 	/**
 	 * Retrieves the enabled SEO options for singular pages, as defined on the main Settings page. Defaults to everything
-	 * enabled.
+	 * disabled.
 	 *
-	 * @todo no it doesn't
-	 *
-	 * @theMikeD Pass 1
+	 * @theMikeD DONE
 	 *
 	 * @param string $post_type  Post type of current post.
 	 * @return array             Array of enabled options.
@@ -1041,12 +1039,11 @@ class Add_Meta_Tags {
 	/**
 	 * Calls the save routine if required
 	 *
-	 * @theMikeD Pass 1
+	 * @theMikeD DONE
 	 *
-	 * @todo: only if post_type is supported
 	 * @param int $post_id The post id the meta will be saved against.
 	 */
-	public function save_singular_meta( $post_id ) {
+	public function save_meta_for_singular_pages( $post_id ) {
 		// Bail if not a valid post type.
 		if ( ! isset( $_POST['post_type'] ) || ! $this->is_supported_post_type( $_POST['post_type'] ) ) { // @codingStandardsIgnoreLine: this is fine
 			return;
@@ -1054,6 +1051,11 @@ class Add_Meta_Tags {
 
 		// Checks to make sure we came from the right page.
 		if ( ! wp_verify_nonce( $_POST['mt_seo_nonce'], 'mt-seo' ) ) { // @codingStandardsIgnoreLine: this is fine
+			return;
+		}
+
+		// If this is an autosave, our form has not been submitted so we don't want to do anything.
+		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
 			return;
 		}
 
@@ -1088,7 +1090,14 @@ class Add_Meta_Tags {
 
 		$data     = isset( $_POST[ $field_name ] ) ? $_POST[ $field_name ] : ''; // @codingStandardsIgnoreLine: this is fine
 
-		// @todo: add doc block
+		/**
+		 * Filter the data about to be saved.
+		 *
+		 * @param array  $data         The newly entered data
+		 * @param string $field_name   The field to save
+		 * @param array  $old_data     The previously saved data
+		 * @param int    $post_id      The post ID
+		 */
 		$data = apply_filters( 'mt_seo_save_meta_field', $data, $field_name, $old_data, $post_id );
 
 		// Sanitize.
