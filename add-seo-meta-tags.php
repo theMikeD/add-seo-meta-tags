@@ -1037,7 +1037,8 @@ class Add_Meta_Tags {
 
 
 	/**
-	 * Calls the save routine if required
+	 * Calls the save routine if required. For backwards-compatibility reasons, each metatag's post meta value is
+     * saved individually instead of as an array with the general options.
 	 *
 	 * @theMikeD DONE
 	 *
@@ -1072,9 +1073,9 @@ class Add_Meta_Tags {
 
 
 	/**
-	 * Saves a given meta field for singular post types
+	 * Saves a given post meta field for singular post types.
 	 *
-	 * @theMikeD Pass 1
+	 * @theMikeD DONE
 	 *
 	 * @param int    $post_id     The post id the meta will be saved against.
 	 * @param string $field_name  The field to save.
@@ -1093,9 +1094,9 @@ class Add_Meta_Tags {
 		/**
 		 * Filter the data about to be saved.
 		 *
-		 * @param array  $data         The newly entered data
+		 * @param string $data         The newly entered data
 		 * @param string $field_name   The field to save
-		 * @param array  $old_data     The previously saved data
+		 * @param string $old_data     The previously saved data
 		 * @param int    $post_id      The post ID
 		 */
 		$data = apply_filters( 'mt_seo_save_meta_field', $data, $field_name, $old_data, $post_id );
@@ -1104,14 +1105,7 @@ class Add_Meta_Tags {
 		if ( 'mt_seo_meta' === $field_name ) {
 			$data = wp_kses(
 				trim( stripslashes( $data ) ),
-				array(
-					'meta' => array(
-						'http-equiv' => array(),
-						'name'       => array(),
-						'property'   => array(),
-						'content'    => array(),
-					),
-				)
+				$this->get_kses_valid_tags__metatags()
 			);
 		} else {
 			$data = wp_filter_post_kses( $data );
@@ -1123,14 +1117,14 @@ class Add_Meta_Tags {
 			return;
 		}
 
-		// Nothing new, and we're deleting the old.
-		if ( empty( $data ) && ! empty( $old_data ) ) {
-			delete_post_meta( $post_id, $field_name );
+		// Nothing to change.
+		if ( $data === $old_data ) {
 			return;
 		}
 
-		// Nothing to change.
-		if ( $data === $old_data ) {
+		// Nothing new, and we're deleting the old.
+		if ( empty( $data ) && ! empty( $old_data ) ) {
+			delete_post_meta( $post_id, $field_name );
 			return;
 		}
 
@@ -1323,8 +1317,10 @@ class Add_Meta_Tags {
 	private function get_kses_valid_tags__metatags() {
 		return array(
 			'meta' => array(
-				'name'    => true,
-				'content' => true,
+				'http-equiv' => array(),
+				'name'       => array(),
+				'property'   => array(),
+				'content'    => array(),
 			),
 		);
 	}
