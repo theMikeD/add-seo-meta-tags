@@ -53,6 +53,7 @@ Things I'd like to do but would be breaking changes
 @todo: change filter names to be more descriptive. ex.: amt_desc_value to amt_max_description_length
 @todo: add separate sections for each custom post type (right now CPT gets treated the same as post)
 @todo: the character counts on the options panel are broken and not formatted correctly.
+@todo: there is a case for duplicate tags if site_wide and per-page custom are set to the same thing. This should be accounted for
 
 */
 
@@ -221,9 +222,9 @@ class Add_Meta_Tags {
 			$viewing_page = 'singular';
 		}
 
-		// Enqueue the CSS, and equeue and localize the JS, if we're on a supported post type page, or the option page.
+		// Enqueue the CSS, and enqueue and localize the JS, if we're on a supported post type page, or the option page.
 		if ( ( in_array( $pagenow, array( 'options-general.php' ), true ) )
-			|| ( in_array( $pagenow, array( 'post.php', 'post-new.php', true ), true ) && in_array( get_post_type(), $supported_post_types, true ) ) ) {
+			|| ( in_array( $pagenow, array( 'post.php', 'post-new.php' ), true ) && in_array( get_post_type(), $supported_post_types, true ) ) ) {
 
 			add_action( 'admin_head', array( $this, 'do_inline_styles' ) );
 
@@ -279,8 +280,7 @@ class Add_Meta_Tags {
 		}
 
 		$cmpvalues = $this->get_enabled_singular_options( $post->post_type );
-
-		$metatags = array();
+		$metatags  = array();
 
 		// Add META tags to Singular pages.
 		if ( is_singular() ) {
@@ -305,7 +305,7 @@ class Add_Meta_Tags {
 							break;
 					}
 					if ( isset( $yoast_field_name ) ) {
-						${$field_name} = (string) get_post_meta( $posts[0]->ID, $yoast_field_name, true );
+						${$field_name} = (string) get_post_meta( $post->ID, $yoast_field_name, true );
 					}
 				}
 			}
@@ -332,19 +332,19 @@ class Add_Meta_Tags {
 				$meta_description = apply_filters( 'amt_meta_description', $meta_description );
 
 				if ( ! empty( $meta_description ) ) {
-					$metatags[] = '<meta name="description" content="' . esc_attr( $this->clean_meta_description( $meta_description ) ) . '" />';
+					$metatags['description'] = $meta_description;
 				}
 			}
 
 			// Custom Meta Tags. This is a fully-rendered META tag, so no need to build it up.
 			if ( ! empty( $mt_seo_meta ) && '1' === $cmpvalues['mt_seo_meta'] ) {
 				// This is a potential difference; no escaping was done on this value in previous versions.
-				$metatags[] = $this->clean_meta_tags( $mt_seo_meta );
+				$metatags['custom'] = $mt_seo_meta;
 			}
 
 			// Google News Meta. From post meta field "mt-seo-google-news-meta.
 			if ( ! empty( $mt_seo_google_news_meta ) && '1' === $cmpvalues['mt_seo_google_news_meta'] ) {
-				$metatags[] = '<meta name="news_keywords" content="' . esc_attr( $mt_seo_google_news_meta ) . '" />';
+				$metatags['news_keywords'] = $mt_seo_google_news_meta;
 			}
 
 			/*
@@ -366,13 +366,13 @@ class Add_Meta_Tags {
 							// Also, the %tags% tag is replaced by the post's tags.
 							$mt_seo_keywords = str_replace( '%tags%', $this->get_post_tags(), $mt_seo_keywords );
 						}
-						$metatags[] = '<meta name="keywords" content="' . esc_attr( strtolower( $mt_seo_keywords ) ) . '" />';
+						$metatags['keywords'] = $mt_seo_keywords;
 					} elseif ( is_single() ) {
 						// Add categories and tags for keywords.
 						$post_keywords = strtolower( $this->get_post_categories() );
 						$post_tags     = strtolower( $this->get_post_tags() );
 
-						$metatags[] = '<meta name="keywords" content="' . esc_attr( $post_keywords . ', ' . $post_tags ) . '" />';
+						$metatags['keywords'] = $post_keywords . ', ' . $post_tags;
 					}
 				}
 			}
@@ -387,61 +387,118 @@ class Add_Meta_Tags {
 			*/
 			if ( empty( $site_description ) ) {
 				// If $site_description is empty, then use the blog description from the options.
-				$metatags[] = '<meta name="description" content="' . esc_attr( $this->clean_meta_description( get_bloginfo( 'description' ) ) ) . '" />';
+				$metatags['description'] = get_bloginfo( 'description' );
 			} else {
 				// If $site_description has been set, then use it in the description meta-tag.
-				$metatags[] = '<meta name="description" content="' . esc_attr( $this->clean_meta_description( $site_description ) ) . '" />';
+				$metatags['description'] = $site_description;
 			}
 
 			// Keywords.
 			if ( empty( $site_keywords ) ) {
 				// If $site_keywords is empty, then all the blog's categories are added as keywords.
-				$metatags[] = '<meta name="keywords" content="' . esc_attr( $this->get_site_categories() ) . '" />';
+				$metatags['keywords'] = $this->get_site_categories();
 			} else {
 				// If $site_keywords has been set, then these keywords are used.
-				$metatags[] = '<meta name="keywords" content="' . esc_attr( $site_keywords ) . '" />';
+				$metatags['keywords'] = $site_keywords;
 			}
 		} elseif ( is_tax() || is_tag() || is_category() ) {
 			// taxonomy archive page.
 			$term_desc = term_description();
 			if ( $term_desc ) {
-				$metatags[] = '<meta name="description" content="' . esc_attr( $this->clean_meta_description( $term_desc ) ) . '" />';
+				$metatags['description'] = $term_desc;
 			}
 
 			// The keyword is the term name.
 			$term_name = single_term_title( '', false );
 			if ( $term_name ) {
-				$metatags[] = '<meta name="keywords" content="' . esc_attr( strtolower( $term_name ) ) . '" />';
+				$metatags['keywords'] = $term_name;
 			}
 		}
 
 		if ( $site_wide_meta ) {
-			$metatags[] = $this->clean_meta_tags( $site_wide_meta );
+			$metatags['site_wide'] = $site_wide_meta;
 		}
 
 		/**
-		 * Filter the generated meta tags. New filter to allow for easier use by passing an array instead of a string.
+		 * Filter the generated meta tags. New filter to allow for easier use by passing an array
+		 * instead of a string.
 		 *
-		 * @param array $metatags   Contains each derived metatag as an array entry.
+		 * @param array $metatags   Contains metatag key->value pairs.
 		 */
 		$metatags = apply_filters( 'amt_metatags_array', $metatags );
 
 		if ( is_array( $metatags ) && ! empty( $metatags ) ) {
-			$metatags_as_string = implode( "\n", $metatags );
+			$actual_metatags    = $this->create_metatags( $metatags );
+			$metatags_as_string = implode( PHP_EOL, $actual_metatags );
 
 			/**
-			 * Filter the generated meta tags. Preserved filter from old code that sends the metatags as a string.
+			 * Filter the generated meta tags. Preserved filter from old code that sends the metatags
+			 * as a string.
 			 *
 			 * @param array $metatags_as_string   Contains each derived metatag as a return-separated string.
 			 */
 			$metatags_as_string = apply_filters( 'amt_metatags', $metatags_as_string );
 
-			if ( $metatags_as_string ) {
+			if ( is_string( $metatags_as_string ) ) {
 				echo wp_kses( $metatags_as_string . PHP_EOL, $this->get_kses_valid_tags__metatags() );
 			}
 		}
 	}
 
+
+	/**
+	 * Given a hash of tag->data pairs, returns an array of created metatags.
+	 *
+	 * @param array $metatags   Array of key -> data pairs for metatags.
+	 * @return array
+	 */
+	public function create_metatags( $metatags ) {
+		$actual_metatags = array();
+		if ( is_array( $metatags ) && ! empty( $metatags ) ) {
+			foreach ( $metatags as $tag => $data ) {
+				$actual_metatags[] = $this->create_metatag( $tag, $data );
+			}
+		}
+		return $actual_metatags;
+	}
+
+	/**
+	 * Create the XML for a single meta tag, escaping and cleaning as we go.
+	 *
+	 * @param string $tag    The tag name
+	 * @param string $data   The tag data
+	 * @return string   the XML metatag string
+	 */
+	public function create_metatag( $tag, $data ) {
+		if ( ! is_string( $tag ) || empty( $tag ) || ! is_string( $data ) || empty( $data ) ) {
+			return '';
+		}
+
+		if ( 'custom' === $tag || 'site_wide' === $tag ) {
+			return trim( stripslashes( $data ) );
+		}
+
+		// First clean the data
+		$clean_data = esc_attr( trim( stripslashes( $data ) ) );
+		// Then to special stuff with particular tags
+		switch ( $tag ) {
+			case 'keywords':
+			case 'news_keywords':
+				$clean_data = strtolower( $clean_data );
+				break;
+			case 'description':
+				$clean_data = stripslashes( $clean_data );
+				$clean_data = wp_strip_all_tags( $clean_data );
+				$clean_data = htmlspecialchars( $clean_data );
+				// Collapse all whitespace to a single space, in two steps
+				$clean_data = preg_replace( '/([\n \t\r]+)/', ' ', $clean_data );
+				$clean_data = preg_replace( '/( +)/', ' ', $clean_data );
+				$clean_data = trim( $clean_data );
+				break;
+		}
+		// Finally build up the actual XML, except for the ones we get already rendered
+		return '<meta name="' . $tag . '" content="' . $clean_data . '" />';
+	}
 
 
 	/*******************************************************************************************************************
@@ -1496,21 +1553,6 @@ class Add_Meta_Tags {
 
 
 	/**
-	 * Cleans out unwanted characters for use with meta tags.
-	 *
-	 * @theMikeD DONE
-	 *
-	 * @param string $text The text to clean.
-	 * @return string
-	 */
-	public function clean_meta_tags( $text ) {
-		$text = stripslashes( $text );
-		$text = trim( $text );
-		return $text;
-	}
-
-
-	/**
 	 * Echos the styles used by the in-page meta box, including the Google search result preview
 	 *
 	 * @theMikeD DONE
@@ -1693,25 +1735,6 @@ class Add_Meta_Tags {
 			$clean[ $key ] = (bool) $value;
 		}
 		return $clean;
-	}
-
-
-	/**
-	 * Filters the description meta tag text. See code for how.
-	 *
-	 * @theMikeD DONE
-	 *
-	 * @param string $desc Meta Description.
-	 * @return string
-	 */
-	public function clean_meta_description( $desc ) {
-		$desc = stripslashes( $desc );
-		$desc = wp_strip_all_tags( $desc );
-		$desc = htmlspecialchars( $desc );
-		// Collapse all whitespace to a single space, in two steps
-		$desc = preg_replace( '/([\n \t\r]+)/', ' ', $desc );
-		$desc = preg_replace( '/( +)/', ' ', $desc );
-		return trim( $desc );
 	}
 
 
