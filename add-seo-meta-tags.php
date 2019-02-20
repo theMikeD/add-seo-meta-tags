@@ -288,7 +288,7 @@ class Add_Meta_Tags {
 			if ( ! in_array( '1', $cmpvalues, true ) ) {
 				return;
 			}
-			foreach ( (array) $this->mt_seo_fields as $field_name => $field_data ) {
+			foreach ( array_keys( $this->mt_seo_fields ) as $field_name ) {
 				${$field_name} = (string) get_post_meta( $post->ID, $field_name, true );
 
 				/*
@@ -1130,7 +1130,7 @@ class Add_Meta_Tags {
 			return;
 		}
 
-		foreach ( (array) $this->mt_seo_fields as $field_name => $field_data ) {
+		foreach ( array_keys( $this->mt_seo_fields ) as $field_name ) {
 			self::save_meta_field( $post_id, $field_name );
 		}
 	}
