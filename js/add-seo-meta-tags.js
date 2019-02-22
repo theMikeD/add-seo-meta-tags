@@ -58,14 +58,21 @@
 		 */
 		buildCounter : function( el, limit, label ) {
 			var t    = this,
-			$counter = $( "<div class='mt_counter' data-limit=" + limit + " />" );
+				$counter = $( "<div>" )
+					.attr( "class", "mt_counter" )
+					.attr( "data-limit", limit );
+
 			el.after( $counter );
 
 			var html = amt_values.counter_label;
 			html     = html.replace( /%%TITLE%%/, label );
 			html     = html.replace( /%%LIMIT%%/, limit );
-			html     = html.replace( /%%COUNT%%/, '<span class="count">' + limit + '</span>' );
-			$counter.html( html );
+
+			var re = /^(.+)(%%COUNT%%)(.+)$/;
+			var split_text = html.match( re );
+			var $part2 = $( "<span>" ).text( limit ).attr( "class", "count" );
+
+			$counter.append( split_text[1] ).append( $part2 ).append( split_text[3] );
 
 			if ( 'singular' === amt_values.viewing_page ) {
 				t.updateTitle();
