@@ -64,15 +64,13 @@
 
 			el.after( $counter );
 
-			var html = amt_values.counter_label;
-			html     = html.replace( /%%TITLE%%/, label );
-			html     = html.replace( /%%LIMIT%%/, limit );
+			var labels = JSON.parse( amt_values.counter_label );
+			var pre    = labels[0];
+			pre        = pre.replace( /%%TITLE%%/, label );
+			pre        = pre.replace( /%%LIMIT%%/, limit );
+			var $cnt   = $( "<span>" ).text( limit ).attr( "class", "count" );
 
-			var re = /^(.+)(%%COUNT%%)(.+)$/;
-			var split_text = html.match( re );
-			var $part2 = $( "<span>" ).text( limit ).attr( "class", "count" );
-
-			$counter.append( split_text[1] ).append( $part2 ).append( split_text[3] );
+			$counter.append( pre ).append( $cnt ).append( labels[1] );
 
 			if ( 'singular' === amt_values.viewing_page ) {
 				t.updateTitle();

@@ -223,8 +223,7 @@ class Add_Meta_Tags {
 		}
 
 		// Enqueue the CSS, and enqueue and localize the JS, if we're on a supported post type page, or the option page.
-		if ( ( in_array( $pagenow, array( 'options-general.php' ), true ) )
-			|| ( in_array( $pagenow, array( 'post.php', 'post-new.php' ), true ) && in_array( get_post_type(), $supported_post_types, true ) ) ) {
+		if ( 'general' === $viewing_page || 'singular' === $viewing_page ) {
 
 			add_action( 'admin_head', array( $this, 'do_inline_styles' ) );
 
@@ -245,8 +244,15 @@ class Add_Meta_Tags {
 			 */
 			$max_title_length = absint( apply_filters( 'amt_title_length', $this->max_title_length ) );
 
+			$label = array(
+				__( 'The %%TITLE%% is limited to %%LIMIT%% characters by search engines.', 'add-meta-tags' ) . ' ',
+				' ' . __( 'characters remaining.', 'add-meta-tags' ),
+			);
+
+			$label_json = wp_json_encode( $label );
+
 			$values_to_send = array(
-				'counter_label'    => __( 'The %%TITLE%% is limited to %%LIMIT%% characters by search engines. %%COUNT%% characters remaining.', 'add-meta-tags' ),
+				'counter_label'    => $label_json,
 				'desc_label'       => __( 'description', 'add-meta-tags' ),
 				'title_label'      => __( 'title', 'add-meta-tags' ),
 				'max_desc_length'  => $max_desc_length,
