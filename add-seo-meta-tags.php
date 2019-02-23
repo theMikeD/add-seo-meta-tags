@@ -290,7 +290,7 @@ class Add_Meta_Tags {
 
 		// Add META tags to Singular pages.
 		if ( is_singular() ) {
-			if ( ! in_array( '1', $cmpvalues, true ) && ! empty( $options[ 'site_wide_meta' ] ) ) {
+			if ( ! in_array( '1', $cmpvalues, true ) && ! empty( $options['site_wide_meta'] ) ) {
 				return;
 			}
 			foreach ( array_keys( $this->mt_seo_fields ) as $field_name ) {
