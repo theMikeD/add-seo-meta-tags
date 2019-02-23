@@ -97,13 +97,14 @@
 			}
 			if ( $title.val() === '' ) {
 				// If the title text entry area is blank, then we use the page title
-				$( "#mt_snippet .title" ).html( jQuery( '<p>' + originalTitle + '</p>' ).text() );
+				$( "#mt_snippet .title" ).append( $( "p" ).text(  originalTitle ) );
 				var count = originalTitle.length;
 			} else {
+				var new_title = originalTitle.replace( /%title%/, label );
 				// Otherwise, use what we have after subbing in the page title for the %title% placeholder
-				$( "#mt_snippet .title" ).html( jQuery( '<p>' + $title.val().replace( '%title%', originalTitle ).substring( 0, limit ) + '</p>' ).text() );
+				$( "#mt_snippet .title" ).append( $( "p" ).text( new_title ) ); //html( jQuery( '<p>' + $title.val().replace( '%title%', originalTitle ).substring( 0, limit ) + '</p>' ).text() );
 				// If the placeholder for the page title is used, sub that in before counting.
-				var count = $title.val().replace( '%title%', originalTitle ).length;
+				var count = new_title.val().length;
 			}
 			$title.siblings( '.mt_counter' ).find( '.count' ).replaceWith( t.updateCounter( count, limit ) );
 		},
@@ -123,7 +124,8 @@
 			limit     = $desc.attr( 'data-limit' ) || parseInt( amt_values.max_desc_length );
 
 			$desc.siblings( '.mt_counter' ).find( '.count' ).replaceWith( t.updateCounter( count, limit ) );
-			$( '#mt_snippet .content' ).html( jQuery( '<p>' + $desc.val().substring( 0, limit ) + '</p>' ).text() );
+
+			$( '#mt_snippet .content' ).append( "p" ).text( $desc.val().substring( 0, limit ) );
 		},
 
 		/**
