@@ -54,7 +54,7 @@ Things I'd like to do but would be breaking changes
 @todo: add separate sections for each custom post type (right now CPT gets treated the same as post)
 @todo: the character counts on the options panel are broken and not formatted correctly.
 @todo: there is a case for duplicate tags if site_wide and per-page custom are set to the same thing. This should be accounted for
-
+@todo: we use both %title% and %%TITLE%% as string substitution. Doh.
 */
 
 /**
@@ -290,8 +290,7 @@ class Add_Meta_Tags {
 
 		// Add META tags to Singular pages.
 		if ( is_singular() ) {
-			// Only do stuff if any of the enabled options is true.
-			if ( ! in_array( '1', $cmpvalues, true ) ) {
+			if ( ! in_array( '1', $cmpvalues, true ) && ! empty( $options[ 'site_wide_meta' ] ) ) {
 				return;
 			}
 			foreach ( array_keys( $this->mt_seo_fields ) as $field_name ) {
