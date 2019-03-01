@@ -7,7 +7,7 @@ Version: 2.0.0
 Author: George Notaras, Automattic, @theMikeD
 License: Apache License, Version 2.0
 
-This is a rewriteen version of the significantly modified version of the add-meta-tags plugin. The
+This is a rewritten version of the significantly modified version of the add-meta-tags plugin. The
 rewrite was done to bring the code in line with current best practices and standards.
 
 What's new
@@ -52,7 +52,6 @@ limitations under the License.
 Things I'd like to do but would be breaking changes
 @todo: change filter names to be more descriptive. ex.: amt_desc_value to amt_max_description_length
 @todo: add separate sections for each custom post type (right now CPT gets treated the same as post)
-@todo: the character counts on the options panel are broken and not formatted correctly.
 @todo: there is a case for duplicate tags if site_wide and per-page custom are set to the same thing. This should be accounted for
 @todo: we use both %title% and %%TITLE%% as string substitution. Doh.
 */
@@ -153,8 +152,6 @@ class Add_Meta_Tags {
 	/**
 	 * Add_Meta_Tags constructor.
 	 *
-	 * @theMikeD DONE
-	 *
 	 * @return void
 	 */
 	public function __construct() {
@@ -173,8 +170,6 @@ class Add_Meta_Tags {
 
 	/**
 	 * Initialize the required hooks
-	 *
-	 * @theMikeD DONE
 	 *
 	 * @return void
 	 */
@@ -202,8 +197,6 @@ class Add_Meta_Tags {
 
 	/**
 	 * Enqueue the admin CSS and script, including setting up the script's localized values.
-	 *
-	 * @theMikeD DONE
 	 *
 	 * @return void
 	 */
@@ -266,8 +259,6 @@ class Add_Meta_Tags {
 
 	/**
 	 * Creates and echoes the meta tag block for the page header.
-	 *
-	 * @theMikeD DONE
 	 *
 	 * @return void
 	 */
@@ -467,6 +458,7 @@ class Add_Meta_Tags {
 		return $actual_metatags;
 	}
 
+
 	/**
 	 * Create the XML for a single meta tag, escaping and cleaning as we go.
 	 *
@@ -513,8 +505,6 @@ class Add_Meta_Tags {
 	/**
 	 * Adds the options panel under Settings.
 	 *
-	 * @theMikeD DONE
-	 *
 	 * @return void
 	 */
 	public function add_options_panel() {
@@ -530,8 +520,6 @@ class Add_Meta_Tags {
 
 	/**
 	 * Display the options page content.
-	 *
-	 * @theMikeD DONE
 	 *
 	 * @return void
 	 */
@@ -551,8 +539,6 @@ class Add_Meta_Tags {
 
 	/**
 	 * Set up the options page fields and callbacks.
-	 *
-	 * @theMikeD DONE
 	 *
 	 * @return void
 	 */
@@ -648,7 +634,7 @@ class Add_Meta_Tags {
 	/**
 	 * Create and echo the descriptive text for the site-wide options section.
 	 *
-	 * @theMikeD DONE
+	 * @return void
 	 */
 	public function do_section_site_wide() {
 		echo wp_kses( 'These options are site-wide and will apply to every page.', self::get_kses_valid_tags__message() );
@@ -657,8 +643,6 @@ class Add_Meta_Tags {
 
 	/**
 	 * Displays the HTML form element for the site_wide_meta option in the admin options page.
-	 *
-	 * @theMikeD DONE
 	 *
 	 * @return void
 	 */
@@ -682,8 +666,6 @@ class Add_Meta_Tags {
 	/**
 	 * Create and echo the descriptive text for the homepage options section.
 	 *
-	 * @theMikeD DONE
-	 *
 	 * @return void
 	 */
 	public function do_section_home() {
@@ -693,8 +675,6 @@ class Add_Meta_Tags {
 
 	/**
 	 * Displays the HTML form element for the site_description option in the admin options page.
-	 *
-	 * @theMikeD DONE
 	 *
 	 * @return void
 	 */
@@ -708,8 +688,6 @@ class Add_Meta_Tags {
 	/**
 	 * Displays the HTML form element for the site_keywords option in the admin options page.
 	 *
-	 * @theMikeD DONE
-	 *
 	 * @return void
 	 */
 	public function do_home_keywords_html() {
@@ -722,8 +700,6 @@ class Add_Meta_Tags {
 	/**
 	 * Create and echo the descriptive text for the single post and custom post type options section.
 	 *
-	 * @theMikeD DONE
-	 *
 	 * @return void
 	 */
 	public function do_section_post() {
@@ -733,8 +709,6 @@ class Add_Meta_Tags {
 
 	/**
 	 * Displays the HTML form element for the do_mt_seo_title_html option in the admin options page.
-	 *
-	 * @theMikeD DONE
 	 *
 	 * @return void
 	 */
@@ -772,8 +746,6 @@ class Add_Meta_Tags {
 	/**
 	 * Displays the HTML form element for the custom_post_types option in the admin options page if
 	 * any valid custom post types are present.
-	 *
-	 * @theMikeD DONE
 	 *
 	 * @return void
 	 */
@@ -814,8 +786,6 @@ class Add_Meta_Tags {
 	/**
 	 * Create and echo the descriptive text for the page options section.
 	 *
-	 * @theMikeD DONE
-	 *
 	 * @return void
 	 */
 	public function do_section_page() {
@@ -825,8 +795,6 @@ class Add_Meta_Tags {
 
 	/**
 	 * Displays the HTML form element for the page_options option in the admin options page.
-	 *
-	 * @theMikeD DONE
 	 *
 	 * @return void
 	 */
@@ -864,8 +832,6 @@ class Add_Meta_Tags {
 	/**
 	 * Create and echo the descriptive text for the Notes section.
 	 *
-	 * @theMikeD DONE
-	 *
 	 * @return void
 	 */
 	public function do_section_notes() {
@@ -875,8 +841,6 @@ class Add_Meta_Tags {
 
 	/**
 	 * Displays the HTML form element for the taxonomy_archive_notes option in the admin options page.
-	 *
-	 * @theMikeD DONE
 	 *
 	 * @return void
 	 */
@@ -907,8 +871,6 @@ class Add_Meta_Tags {
 	/**
 	 * Adds the post edit meta box for supported post types.
 	 *
-	 * @theMikeD DONE
-	 *
 	 * @param string  $post_type  The post type of the current edit page.
 	 * @param WP_Post $post       The current post object.
 	 *
@@ -928,8 +890,6 @@ class Add_Meta_Tags {
 
 	/**
 	 * Creates, populates and adds the per-page meta box.
-	 *
-	 * @theMikeD DONE
 	 *
 	 * @param WP_Post $post      Post object.
 	 */
@@ -1062,8 +1022,6 @@ class Add_Meta_Tags {
 	/**
 	 * Retrieves the options from the database and stores them for later use if not already stored.
 	 *
-	 * @theMikeD DONE
-	 *
 	 * @return array
 	 */
 	public function get_saved_options() {
@@ -1081,8 +1039,6 @@ class Add_Meta_Tags {
 	/**
 	 * Retrieves the enabled SEO options for singular pages, as defined on the main Settings page. Defaults to everything
 	 * disabled.
-	 *
-	 * @theMikeD DONE
 	 *
 	 * @param string $post_type  Post type of current post.
 	 * @return array             Array of enabled options.
@@ -1108,8 +1064,6 @@ class Add_Meta_Tags {
 	/**
 	 * Calls the save routine if required. For backwards-compatibility reasons, each metatag's post meta value is
 	 * saved individually instead of as an array with the general options.
-	 *
-	 * @theMikeD DONE
 	 *
 	 * @param int $post_id The post id the meta will be saved against.
 	 */
@@ -1143,8 +1097,6 @@ class Add_Meta_Tags {
 
 	/**
 	 * Saves a given post meta field for singular post types.
-	 *
-	 * @theMikeD DONE
 	 *
 	 * @param int    $post_id     The post id the meta will be saved against.
 	 * @param string $field_name  The field to save.
@@ -1223,8 +1175,6 @@ class Add_Meta_Tags {
 	/**
 	 * Gets the valid tags and attributes for use with checkbox elements in the admin options page and meta boxes.
 	 *
-	 * @theMikeD DONE
-	 *
 	 * @return array
 	 */
 	private function get_kses_valid_tags__checkbox() {
@@ -1245,8 +1195,6 @@ class Add_Meta_Tags {
 	/**
 	 * Gets the valid tags and attributes for use with lists in the admin options page and meta boxes.
 	 *
-	 * @theMikeD DONE
-	 *
 	 * @return array
 	 */
 	private function get_kses_valid_tags__list() {
@@ -1259,8 +1207,6 @@ class Add_Meta_Tags {
 
 	/**
 	 * Gets the valid tags and attributes for use with <textarea> elements in the admin options page and meta boxes.
-	 *
-	 * @theMikeD DONE
 	 *
 	 * @return array
 	 */
@@ -1278,8 +1224,6 @@ class Add_Meta_Tags {
 
 	/**
 	 * Gets the valid tags and attributes for use with <input type='text'> elements in the admin options page and meta boxes.
-	 *
-	 * @theMikeD DONE
 	 *
 	 * @return array
 	 */
@@ -1300,8 +1244,6 @@ class Add_Meta_Tags {
 	/**
 	 * Gets the valid tags and attributes for use with general messages in the admin options page and meta boxes.
 	 *
-	 * @theMikeD DONE
-	 *
 	 * @return array
 	 */
 	private function get_kses_valid_tags__message() {
@@ -1320,8 +1262,6 @@ class Add_Meta_Tags {
 
 	/**
 	 * Gets the valid tags and attributes for use with elements related to the meta box in the post/page edit screen.
-	 *
-	 * @theMikeD DONE
 	 *
 	 * @return array
 	 */
@@ -1353,8 +1293,6 @@ class Add_Meta_Tags {
 	/**
 	 * Gets the valid tags and attributes for use with elements related to the meta box in the post/page edit screen.
 	 *
-	 * @theMikeD DONE
-	 *
 	 * @return array
 	 */
 	private function form_get_kses_valid_tags__metabox_description() {
@@ -1379,8 +1317,6 @@ class Add_Meta_Tags {
 	/**
 	 * Gets the valid tags and attributes for use with <meta> elements in page source.
 	 *
-	 * @theMikeD DONE
-	 *
 	 * @return array
 	 */
 	private function get_kses_valid_tags__metatags() {
@@ -1404,8 +1340,6 @@ class Add_Meta_Tags {
 	 *     is used. Otherwise, an ellipsis entity is appended and that string is used.
 	 *
 	 * Provides a filter amt_get_the_excerpt() to modify the excerpt before returning it.
-	 *
-	 * @theMikeD DONE
 	 *
 	 * @param object $post               The post object.
 	 * @param int    $excerpt_max_len    The maximum excerpt length when it's pulled from content.
@@ -1457,8 +1391,6 @@ class Add_Meta_Tags {
 	 *
 	 * Provides a filter amt_get_the_categories() to modify the categories list before returning it.
 	 *
-	 * @theMikeD DONE
-	 *
 	 * @return bool|string  Comma-separated list of post's categories
 	 */
 	public function get_post_categories() {
@@ -1486,8 +1418,6 @@ class Add_Meta_Tags {
 	 *
 	 * Provides a filter amt_get_the_tags() to modify the tags list before returning it.
 	 *
-	 * @theMikeD DONE
-	 *
 	 * @return bool|string  Comma-separated list of post's tags
 	 */
 	public function get_post_tags() {
@@ -1514,8 +1444,6 @@ class Add_Meta_Tags {
 
 	/**
 	 * Get the 20 most popular categories, optionally excluding 'Uncategorized' from the list.
-	 *
-	 * @theMikeD DONE
 	 *
 	 * @param bool $no_uncategorized    If true, skip 'Uncategorized' Otherwise, include it.
 	 * @return string                   Comma-separated list of site's 20 top categories, or empty string.
@@ -1560,8 +1488,6 @@ class Add_Meta_Tags {
 	/**
 	 * Echos the styles used by the in-page meta box, including the Google search result preview
 	 *
-	 * @theMikeD DONE
-	 *
 	 * @return void
 	 */
 	public function do_inline_styles() {
@@ -1587,8 +1513,6 @@ class Add_Meta_Tags {
 
 	/**
 	 * Filters the page title used in the document head. Filtered via document_title_parts().
-	 *
-	 * @theMikeD DONE
 	 *
 	 * @param array $title The array of title fragments. See wp_get_document_title() for array elements
 	 * @return array
@@ -1621,8 +1545,6 @@ class Add_Meta_Tags {
 	/**
 	 * Does all required string substitutions for the title string.
 	 *
-	 * @theMikeD DONE
-	 *
 	 * @param string $title      Original page title
 	 * @param string $seo_title  Title string taken from post meta
 	 * @return string
@@ -1634,8 +1556,6 @@ class Add_Meta_Tags {
 
 	/**
 	 * Determines if a supplied post type is supported or not.
-	 *
-	 * @theMikeD DONE
 	 *
 	 * @param string $post_type The post type name.
 	 *
@@ -1649,8 +1569,6 @@ class Add_Meta_Tags {
 
 	/**
 	 * Gets the post types stored in the options table
-	 *
-	 * @theMikeD DONE
 	 *
 	 * @param bool $return_hash     If true, return the hash as taken from the options get.
 	 *                              If false, return the post type names as a simple array.
@@ -1685,8 +1603,6 @@ class Add_Meta_Tags {
 	/**
 	 * Gets the list of non-built-in post types enables in the system.
 	 *
-	 * @theMikeD DONE
-	 *
 	 * @return array
 	 */
 	public function get_registered_post_types() {
@@ -1712,8 +1628,6 @@ class Add_Meta_Tags {
 	/**
 	 * Small helper function to indicate if valid custom post types are present. Aids in options panel creation.
 	 *
-	 * @theMikeD DONE
-	 *
 	 * @return bool
 	 */
 	public function valid_custom_post_types_are_present() {
@@ -1728,8 +1642,6 @@ class Add_Meta_Tags {
 
 	/**
 	 * Converts all entries of an array into boolean using a simple cast.
-	 *
-	 * @theMikeD DONE
 	 *
 	 * @param array $array Source array.
 	 * @return array
@@ -1746,8 +1658,6 @@ class Add_Meta_Tags {
 	/**
 	 * Using the 'checked' function will fail if the option being checked is stored in an array and that array key doesn't
 	 * exist. This function will ensure that the value used to compare using 'checked' is always valid.
-	 *
-	 * @theMikeD DONE
 	 *
 	 * @param array  $stored_options        The array of options as retrieved from the database.
 	 * @param string $option_to_check       The particular option to check.
