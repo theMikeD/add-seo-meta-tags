@@ -20,7 +20,7 @@ What's new
  * Plugin menu name and Options page name is different (and more accurate now)
  * Options page and meta boxes are generated using proper APIs instead of raw HTML
  * Options page and meta box instructions text is clarified
- * So much wp_kses()
+ * Output EscapingSo much wp_kses()
  * New filters
  * Removed the reset button on the options panel. Too dangerous.
  * Removes hardcoded strings in the JS and replaces them with localized strings.
@@ -190,6 +190,7 @@ class Add_Meta_Tags {
 
 		load_plugin_textdomain( 'add-meta-tags', false, basename( dirname( __FILE__ ) ) . '/languages' );
 
+		// @todo: assign directly? Or maybe can't because of __()
 		$this->options_page_name      = __( 'SEO Meta Tags Options', 'add-meta-tags' );
 		$this->options_page_menu_name = __( 'SEO Options', 'add-meta-tags' );
 	}
@@ -637,7 +638,7 @@ class Add_Meta_Tags {
 	 * @return void
 	 */
 	public function do_section_site_wide() {
-		echo wp_kses( 'These options are site-wide and will apply to every page.', self::get_kses_valid_tags__message() );
+		echo 'These options are site-wide and will apply to every page.';
 	}
 
 
@@ -648,18 +649,11 @@ class Add_Meta_Tags {
 	 */
 	public function do_site_wide_meta_html() {
 		$stored_options = $this->get_saved_options();
-		echo wp_kses(
-			'<p>' . __( 'Provide the full XHTML code for each META tag to add to all pages.', 'add-meta-tags' ) . '</p>',
-			self::get_kses_valid_tags__message()
-		);
-		echo wp_kses(
-			"<textarea name='{$this->options_key}[site_wide_meta]' class='code'>" . esc_textarea( stripslashes( $stored_options['site_wide_meta'] ) ) . '</textarea>',
-			self::get_kses_valid_tags__textarea()
-		);
-		echo wp_kses(
-			'<p><strong>' . __( 'Example', 'add-meta-tags' ) . '</strong>: <code>&lt;meta name="robots" content="index,follow" /&gt;</code></p>',
-			self::get_kses_valid_tags__message()
-		);
+		echo '<p>' . esc_attr( __( 'Provide the full XHTML code for each META tag to add to all pages.', 'add-meta-tags' ) ) . '</p>'
+			. '<textarea  name="' . esc_attr( $this->options_key ) . '[site_wide_meta]" class="code">'
+			. esc_textarea( stripslashes( $stored_options['site_wide_meta'] ) )
+			. '</textarea>'
+			. '<p><strong>' . esc_attr( __( 'Example', 'add-meta-tags' ) ) . '</strong>: <code>&lt;meta name="robots" content="index,follow" /&gt;</code></p>';
 	}
 
 
@@ -669,7 +663,7 @@ class Add_Meta_Tags {
 	 * @return void
 	 */
 	public function do_section_home() {
-		echo wp_kses( 'These options are for the homepage only.', self::get_kses_valid_tags__message() );
+		echo 'These options are for the homepage only.';
 	}
 
 
@@ -680,8 +674,11 @@ class Add_Meta_Tags {
 	 */
 	public function do_home_description_html() {
 		$stored_options = $this->get_saved_options();
-		echo wp_kses( '<p>' . __( 'This text will be used in the "description" meta tag on the homepage only.</p><p>If empty, the tagline (found on the General Options page) will be used.', 'add-meta-tags' ) . '</p>', self::get_kses_valid_tags__message() );
-		echo wp_kses( "<textarea name='{$this->options_key}[site_description]' class='code' id='mt_seo_description'>" . esc_textarea( stripslashes( $stored_options['site_description'] ) ) . '</textarea>', self::get_kses_valid_tags__textarea() );
+		echo '<p>' . esc_html__( 'This text will be used in the "description" meta tag on the homepage only. If empty, the tagline (found on the General Options page) will be used.', 'add-meta-tags' ) . '</p>'
+			. '<textarea name="' . esc_attr( $this->options_key ) . '[site_description]" class="code" id="mt_seo_description">'
+			. esc_textarea( stripslashes( $stored_options['site_description'] ) )
+			. '</textarea>';
+
 	}
 
 
@@ -692,8 +689,8 @@ class Add_Meta_Tags {
 	 */
 	public function do_home_keywords_html() {
 		$stored_options = $this->get_saved_options();
-		echo wp_kses( '<p>' . __( 'Provide a comma-delimited list of keywords for the homepage only. </p><p>If empty, all categories (except for the "Uncategorized" category) will be used.', 'add-meta-tags' ) . '</p>', self::get_kses_valid_tags__message() );
-		echo wp_kses( "<textarea name='{$this->options_key}[site_keywords]' class='code'>" . esc_textarea( stripslashes( $stored_options['site_keywords'] ) ) . '</textarea>', self::get_kses_valid_tags__textarea() );
+		echo '<p>' . esc_html__( 'Provide a comma-delimited list of keywords for the homepage only. If empty, all categories (except for the "Uncategorized" category) will be used.', 'add-meta-tags' ) . '</p>';
+		echo '<textarea name="' . esc_attr( $this->options_key ) . '[site_keywords]" class="code">' . esc_textarea( stripslashes( $stored_options['site_keywords'] ) ) . '</textarea>';
 	}
 
 
@@ -703,7 +700,7 @@ class Add_Meta_Tags {
 	 * @return void
 	 */
 	public function do_section_post() {
-		echo wp_kses( 'These options are for posts and any custom post types that are enabled (below).', self::get_kses_valid_tags__message() );
+		echo 'These options are for posts and any custom post types that are enabled (below).';
 	}
 
 
@@ -719,27 +716,32 @@ class Add_Meta_Tags {
 			$stored_options['post_options'] = $this->get_enabled_singular_options( 'post' );
 		}
 
-		echo wp_kses( '<fieldset>', array( 'fieldset' => true ) );
-		echo wp_kses( '<legend>Select the fields to enable on post and custom post type pages.</legend>', array( 'legend' => true ) );
-		echo wp_kses( '<ul>', $this->get_kses_valid_tags__list() );
+		echo '<fieldset>';
+		echo '<legend>' . esc_html__( 'Select the fields to enable on post and custom post type pages.', 'add-meta-tags' ) . '</legend>';
+		echo '<ul>';
 
 		$checkbox_value = self::validate_checkbox( $stored_options['post_options'], 'mt_seo_title' );
-		echo wp_kses( "<li><input type='checkbox' id='post_mt_seo_title' name='{$this->options_key}[post_options][mt_seo_title]' value='1' " . checked( '1', $checkbox_value, false ) . " /><label for='post_mt_seo_title'>" . __( 'Enable \'Title\'', 'add-meta-tags' ) . '</label></li>', self::get_kses_valid_tags__checkbox() );
+		echo '<li><input type="checkbox" id="post_mt_seo_title" name="' . esc_attr( $this->options_key ) . '[post_options][mt_seo_title]" value="1" ' . checked( '1', $checkbox_value, false ) . ' />'
+			. '<label for="post_mt_seo_title">' . esc_html__( 'Enable \'Title\'', 'add-meta-tags' ) . '</label></li>';
 
 		$checkbox_value = self::validate_checkbox( $stored_options['post_options'], 'mt_seo_description' );
-		echo wp_kses( "<li><input type='checkbox' id='post_mt_seo_description' name='{$this->options_key}[post_options][mt_seo_description]' value='1' " . checked( '1', $checkbox_value, false ) . " /><label for='post_mt_seo_description'>" . __( 'Enable \'Description\'', 'add-meta-tags' ) . '</label></li>', self::get_kses_valid_tags__checkbox() );
+		echo '<li><input type="checkbox" id="post_mt_seo_description" name="' . esc_attr( $this->options_key ) . '[post_options][mt_seo_description]" value="1" ' . checked( '1', $checkbox_value, false ) . ' />'
+			. '<label for="post_mt_seo_description">' . esc_html__( 'Enable \'Description\'', 'add-meta-tags' ) . '</label></li>';
 
 		$checkbox_value = self::validate_checkbox( $stored_options['post_options'], 'mt_seo_keywords' );
-		echo wp_kses( "<li><input type='checkbox' id='post_mt_seo_keywords' name='{$this->options_key}[post_options][mt_seo_keywords]' value='1' " . checked( '1', $checkbox_value, false ) . " /><label for='post_mt_seo_keywords'>" . __( 'Enable \'Keywords\'', 'add-meta-tags' ) . '</label></li>', self::get_kses_valid_tags__checkbox() );
+		echo '<li><input type="checkbox" id="post_mt_seo_keywords" name="' . esc_attr( $this->options_key ) . '[post_options][mt_seo_keywords]" value="1" ' . checked( '1', $checkbox_value, false ) . ' />'
+			. '<label for="post_mt_seo_keywords">' . esc_html__( 'Enable \'Keywords\'', 'add-meta-tags' ) . '</label></li>';
 
 		$checkbox_value = self::validate_checkbox( $stored_options['post_options'], 'mt_seo_meta' );
-		echo wp_kses( "<li><input type='checkbox' id='post_mt_seo_meta' name='{$this->options_key}[post_options][mt_seo_meta]' value='1' " . checked( '1', $checkbox_value, false ) . " /><label for='post_mt_seo_meta'>" . __( 'Enable \'Meta Tags\'', 'add-meta-tags' ) . '</label></li>', self::get_kses_valid_tags__checkbox() );
+		echo '<li><input type="checkbox" id="post_mt_seo_meta" name="' . esc_attr( $this->options_key ) . '[post_options][mt_seo_meta]" value="1" ' . checked( '1', $checkbox_value, false ) . ' />'
+			. '<label for="post_mt_seo_meta">' . esc_html__( 'Enable \'Meta Tags\'', 'add-meta-tags' ) . '</label></li>';
 
 		$checkbox_value = self::validate_checkbox( $stored_options['post_options'], 'mt_seo_google_news_meta' );
-		echo wp_kses( "<li><input type='checkbox' id='post_mt_seo_google_news_meta' name='{$this->options_key}[post_options][mt_seo_google_news_meta]' value='1' " . checked( '1', $checkbox_value, false ) . " /><label for='post_mt_seo_google_news_meta'>" . __( 'Enable \'Google News Meta Tags\'', 'add-meta-tags' ) . '</label></li>', self::get_kses_valid_tags__checkbox() );
+		echo '<li><input type="checkbox" id="post_mt_seo_google_news_meta" name="' . esc_attr( $this->options_key ) . '[post_options][mt_seo_google_news_meta]" value="1" ' . checked( '1', $checkbox_value, false ) . ' />'
+			. '<label for="post_mt_seo_google_news_meta">' . esc_html__( 'Enable \'Google News Meta Tags\'', 'add-meta-tags' ) . '</label></li>';
 
-		echo wp_kses( '</ul>', $this->get_kses_valid_tags__list() );
-		echo wp_kses( '</fieldset>', array( 'fieldset' => true ) );
+		echo '</ul>';
+		echo '</fieldset>';
 	}
 
 
@@ -755,31 +757,20 @@ class Add_Meta_Tags {
 			return;
 		}
 
-		echo wp_kses( '<fieldset>', array( 'fieldset' => true ) );
-		echo wp_kses(
-			'<legend>' . __( 'You can enable the Post Settings for custom post types too. Use the checkboxes below to do so.', 'add-meta-tags' ) . '</legend>',
-			array(
-				'legend' => true,
-				'code'   => true,
-				'br'     => true,
-				'strong' => true,
-			)
-		);
-		echo wp_kses( '<ul>', self::get_kses_valid_tags__list() );
+		echo '<fieldset>';
+		echo '<legend>' . esc_html__( 'You can enable the Post Settings for custom post types too. Use the checkboxes below to do so.', 'add-meta-tags' ) . '</legend>';
+		echo '<ul>';
 
 		$registered_post_types = $this->get_registered_post_types();
 		$supported_post_types  = $this->get_supported_post_types( true );
-
 		foreach ( $registered_post_types as $post_type ) {
 			$checkbox_value = self::validate_checkbox( $supported_post_types, $post_type->name );
-			echo wp_kses(
-				"<li><input type='checkbox' id='post_type_{$post_type->name}' name='{$this->options_key}[custom_post_types][" . esc_attr( $post_type->name ) . "]' value='1' " . checked( '1', $checkbox_value, false ) . " /><label for='post_type_{$post_type->name}'>" . __( 'Apply Post Settings to ', 'add-meta-tags' ) . wp_strip_all_tags( $post_type->labels->name ) . ' (<code>' . wp_strip_all_tags( $post_type->name ) . '</code>)</label></li>',
-				self::get_kses_valid_tags__checkbox()
-			);
+			echo '<li><input type="checkbox" id="post_type_' . esc_attr( $post_type->name ) . '" name="' . esc_attr( $this->options_key ) . '[custom_post_types][' . esc_attr( $post_type->name ) . ']" value="1" ' . checked( '1', $checkbox_value, false ) . ' />'
+				. '<label for="post_type_' . esc_attr( $post_type->name ) . '">' . esc_html__( 'Apply Post Settings to ', 'add-meta-tags' ) . esc_attr( $post_type->labels->name ) . ' (<code>' . esc_attr( $post_type->name ) . '</code>)</label></li>';
 		}
 
-		echo wp_kses( '</ul>', self::get_kses_valid_tags__list() );
-		echo wp_kses( '</fieldset>', array( 'fieldset' => true ) );
+		echo '</ul>';
+		echo '</fieldset>';
 	}
 
 
@@ -789,7 +780,7 @@ class Add_Meta_Tags {
 	 * @return void
 	 */
 	public function do_section_page() {
-		echo wp_kses( 'These options are for pages.', self::get_kses_valid_tags__message() );
+		echo 'These options are for pages.';
 	}
 
 
@@ -805,27 +796,32 @@ class Add_Meta_Tags {
 			$stored_options['post_options'] = $this->get_enabled_singular_options( 'page' );
 		}
 
-		echo wp_kses( '<fieldset>', array( 'fieldset' => true ) );
-		echo wp_kses( '<legend>Select the fields to enable on pages.</legend>', array( 'legend' => true ) );
-		echo wp_kses( '<ul>', $this->get_kses_valid_tags__list() );
+		echo '<fieldset>';
+		echo '<legend>' . esc_html__( 'Select the fields to enable on pages.', 'add-meta-tags' ) . '</legend>';
+		echo '<ul>';
 
 		$checkbox_value = self::validate_checkbox( $stored_options['page_options'], 'mt_seo_title' );
-		echo wp_kses( "<li><input type='checkbox' id='page_mt_seo_title' name='{$this->options_key}[page_options][mt_seo_title]' value='1' " . checked( '1', $checkbox_value, false ) . " /><label for='page_mt_seo_title'>" . __( 'Enable \'Title\'', 'add-meta-tags' ) . '</label></li>', self::get_kses_valid_tags__checkbox() );
+		echo '<li><input type="checkbox" id="page_mt_seo_title" name="' . esc_attr( $this->options_key ) . '[page_options][mt_seo_title]" value="1" ' . checked( '1', $checkbox_value, false ) . ' />'
+			. '<label for="page_mt_seo_title">' . esc_html__( 'Enable \'Title\'', 'add-meta-tags' ) . '</label></li>';
 
 		$checkbox_value = self::validate_checkbox( $stored_options['page_options'], 'mt_seo_description' );
-		echo wp_kses( "<li><input type='checkbox' id='page_mt_seo_description' name='{$this->options_key}[page_options][mt_seo_description]' value='1' " . checked( '1', $checkbox_value, false ) . " /><label for='page_mt_seo_description'>" . __( 'Enable \'Description\'', 'add-meta-tags' ) . '</label></li>', self::get_kses_valid_tags__checkbox() );
+		echo '<li><input type="checkbox" id="page_mt_seo_description" name="' . esc_attr( $this->options_key ) . '[page_options][mt_seo_description]" value="1" ' . checked( '1', $checkbox_value, false ) . ' />'
+			. '<label for="page_mt_seo_description">' . esc_html__( 'Enable \'Description\'', 'add-meta-tags' ) . '</label></li>';
 
 		$checkbox_value = self::validate_checkbox( $stored_options['page_options'], 'mt_seo_keywords' );
-		echo wp_kses( "<li><input type='checkbox' id='page_mt_seo_keywords' name='{$this->options_key}[page_options][mt_seo_keywords]' value='1' " . checked( '1', $checkbox_value, false ) . " /><label for='page_mt_seo_keywords'>" . __( 'Enable \'Keywords\'', 'add-meta-tags' ) . '</label></li>', self::get_kses_valid_tags__checkbox() );
+		echo '<li><input type="checkbox" id="page_mt_seo_keywords" name="' . esc_attr( $this->options_key ) . '[page_options][mt_seo_keywords]" value="1" ' . checked( '1', $checkbox_value, false ) . ' />'
+			. '<label for="page_mt_seo_keywords">' . esc_html__( 'Enable \'Keywords\'', 'add-meta-tags' ) . '</label></li>';
 
 		$checkbox_value = self::validate_checkbox( $stored_options['page_options'], 'mt_seo_meta' );
-		echo wp_kses( "<li><input type='checkbox' id='page_mt_seo_meta' name='{$this->options_key}[page_options][mt_seo_meta]' value='1' " . checked( '1', $checkbox_value, false ) . " /><label for='page_mt_seo_meta'>" . __( 'Enable \'Meta Tags\'', 'add-meta-tags' ) . '</label></li>', self::get_kses_valid_tags__checkbox() );
+		echo '<li><input type="checkbox" id="page_mt_seo_meta" name="' . esc_attr( $this->options_key ) . '[page_options][mt_seo_meta]" value="1" ' . checked( '1', $checkbox_value, false ) . ' />'
+			. '<label for="page_mt_seo_meta">' . esc_html__( 'Enable \'Meta Tags\'', 'add-meta-tags' ) . '</label></li>';
 
 		$checkbox_value = self::validate_checkbox( $stored_options['page_options'], 'mt_seo_google_news_meta' );
-		echo wp_kses( "<li><input type='checkbox' id='page_mt_seo_google_news_meta' name='{$this->options_key}[page_options][mt_seo_google_news_meta]' value='1' " . checked( '1', $checkbox_value, false ) . " /><label for='page_mt_seo_google_news_meta'>" . __( 'Enable \'Google News Meta Tags\'', 'add-meta-tags' ) . '</label></li>', self::get_kses_valid_tags__checkbox() );
+		echo '<li><input type="checkbox" id="page_mt_seo_google_news_meta" name="' . esc_attr( $this->options_key ) . '[page_options][mt_seo_google_news_meta]" value="1" ' . checked( '1', $checkbox_value, false ) . ' />'
+			. '<label for="page_mt_seo_google_news_meta">' . esc_html__( 'Enable \'Google News Meta Tags\'', 'add-meta-tags' ) . '</label></li>';
 
-		echo wp_kses( '</ul>', $this->get_kses_valid_tags__list() );
-		echo wp_kses( '</fieldset>', array( 'fieldset' => true ) );
+		echo '</ul>';
+		echo '</fieldset>';
 	}
 
 
@@ -835,7 +831,7 @@ class Add_Meta_Tags {
 	 * @return void
 	 */
 	public function do_section_notes() {
-		echo wp_kses( 'Notes on other specific page types.', self::get_kses_valid_tags__message() );
+		echo esc_html__( 'Notes on other specific page types.', 'add-meta-tags' );
 	}
 
 
@@ -845,21 +841,12 @@ class Add_Meta_Tags {
 	 * @return void
 	 */
 	public function do_taxonomy_archive_notes_html() {
-		echo wp_kses(
-			'<p>META tags are automatically added to Category, Tag, and Custom Taxonomy Archive pages as follows:</p>',
-			$this->get_kses_valid_tags__message()
-		);
-		echo wp_kses( '<ol>', $this->get_kses_valid_tags__list() );
-		echo wp_kses(
-			'<li>The term name is set as the "keywords" META tag.</li>',
-			$this->get_kses_valid_tags__list()
-		);
-		echo wp_kses(
-			'<li>If the term has a description, that description is set as the "description" META tag.</li>',
-			$this->get_kses_valid_tags__list()
-		);
-		echo wp_kses( '</ol>', $this->get_kses_valid_tags__list() );
-		echo wp_kses( '</p>', $this->get_kses_valid_tags__message() );
+		echo '<p>' . esc_html__( 'META tags are automatically added to Category, Tag, and Custom Taxonomy Archive pages as follows:', 'add-meta-tags' ) . '</p>';
+		echo '<ol>';
+		echo '<li>' . esc_html__( 'The term name is set as the "keywords" META tag.', 'add-meta-tags' ) . '</li>';
+		echo '<li>' . esc_html__( 'If the term has a description, that description is set as the "description" META tag.', 'add-meta-tags' ) . '</li>';
+		echo '</ol>';
+		echo '</p>';
 	}
 
 
@@ -905,11 +892,8 @@ class Add_Meta_Tags {
 
 		// Show message if nothing is enabled, then bail
 		if ( ! in_array( '1', $global_values, true ) ) {
-			echo wp_kses(
-				// translators: %1$s is replaced with the opening <a> tag with the href set to the options panel, %2$s is the closing <a> tag
-				'<p>' . sprintf( __( 'No SEO fields were enabled. Please enable post fields in the %1$s Meta Tags options page %2$s', 'add-meta-tags' ), '<a href="' . get_admin_url() . 'options-general.php?page=' . $this->slug . '">', '</a>' ) . '</p>',
-				$this->get_kses_valid_tags__message()
-			);
+			// translators: %1$s is replaced with the opening <a> tag with the href set to the options panel, %2$s is the closing <a> tag
+			echo '<p>' . esc_html( sprintf( __( 'No SEO fields were enabled. Please enable post fields in the %1$s Meta Tags options page %2$s', 'add-meta-tags' ), '<a href="' . get_admin_url() . 'options-general.php?page=' . $this->slug . '">', '</a>' ) ) . '</p>';
 			return;
 		}
 
@@ -951,26 +935,11 @@ class Add_Meta_Tags {
 		}
 
 		// Make the preview area.
-		echo wp_kses(
-			'<div class="form-field mt_seo_preview form_field"><h4>Preview</h4><div class="mt-form-field-contents"><div id="mt_snippet">',
-			$this->form_get_kses_valid_tags__metabox()
-		);
-		echo wp_kses(
-			'<a href="#" class="title">' . substr( $title, 0, $this->max_title_length ) . '</a><br>',
-			$this->form_get_kses_valid_tags__metabox()
-		);
-		echo wp_kses(
-			'<a href="#" class="url">' . get_permalink() . '</a> - <a href="#" class="util">Cached</a>',
-			$this->form_get_kses_valid_tags__metabox()
-		);
-		echo wp_kses(
-			'<p class="desc"><span class="date">' . date( 'd M Y', strtotime( get_the_time( 'r' ) ) ) . '</span> &ndash; <span class="content">' . substr( $mt_seo_description, 0, 140 ) . '</span></p>', // @codingStandardsIgnoreLine: var is defined indirectly in foreach loop above
-			$this->form_get_kses_valid_tags__metabox()
-		);
-		echo wp_kses(
-			'</div></div></div>',
-			$this->form_get_kses_valid_tags__metabox()
-		);
+		echo '<div class="form-field mt_seo_preview form_field"><h4>Preview</h4><div class="mt-form-field-contents"><div id="mt_snippet">';
+		echo '<a href="#" class="title">' . esc_html( substr( $title, 0, $this->max_title_length ) ) . '</a><br>';
+		echo '<a href="#" class="url">' . esc_url( get_permalink() ) . '</a> - <a href="#" class="util">Cached</a>';
+		echo '<p class="desc"><span class="date">' . date( 'd M Y', strtotime( get_the_time( 'r' ) ) ) . '</span> &ndash; <span class="content">' . substr( $mt_seo_description, 0, 140 ) . '</span></p>'; // @codingStandardsIgnoreLine: var is defined indirectly in foreach loop above
+		echo '</div></div></div>';
 
 		$tabindex = 5000;
 		foreach ( (array) $this->mt_seo_fields as $field_name => $field_data ) {
@@ -979,26 +948,14 @@ class Add_Meta_Tags {
 			}
 
 			if ( 'textarea' === $field_data[1] || 'text' === $field_data[1] ) {
-				echo wp_kses(
-					'<div class="form-field ' . esc_attr( $field_name ) . '"><h4><label for="' . $field_name . '">' . $field_data[0] . '</label></h4><div class="mt-form-field-contents"><p>',
-					$this->form_get_kses_valid_tags__metabox()
-				);
+				echo '<div class="form-field ' . esc_attr( $field_name ) . '"><h4><label for="' . esc_attr( $field_name ) . '">' . esc_html( $field_data[0] ) . '</label></h4><div class="mt-form-field-contents"><p>';
 
 				if ( 'textarea' === $field_data[1] ) {
-					echo wp_kses(
-						'<textarea class="wide-seo-box" rows="4" cols="40" tabindex="' . $tabindex . '" name="' . $field_name . '" id="' . $field_name . '">' . esc_textarea( ${$field_name} ) . '</textarea>',
-						$this->get_kses_valid_tags__textarea()
-					);
+					echo '<textarea class="wide-seo-box" rows="4" cols="40" tabindex="' . esc_attr( $tabindex ) . '" name="' . esc_attr( $field_name ) . '" id="' . esc_attr( $field_name ) . '">' . esc_textarea( ${$field_name} ) . '</textarea>';
 				} elseif ( 'text' === $field_data[1] ) {
-					echo wp_kses(
-						'<input type="text" class="wide-seo-box" tabindex="' . $tabindex . '" name="' . $field_name . '" id="' . $field_name . '" value="' . esc_attr( ${$field_name} ) . '" />',
-						$this->get_kses_valid_tags__text_input()
-					);
+					echo '<input type="text" class="wide-seo-box" tabindex="' . esc_attr( $tabindex ) . '" name="' . esc_attr( $field_name ) . '" id="' . esc_attr( $field_name ) . '" value="' . esc_attr( ${$field_name} ) . '" />';
 				}
-				echo wp_kses(
-					'</p><p class="description">' . $field_data[2] . '</p></div></div>',
-					$this->form_get_kses_valid_tags__metabox_description()
-				);
+				echo '</p><p class="description">' . esc_html( $field_data[2] ) . '</p></div></div>';
 			}
 			$tabindex++;
 		}
@@ -1171,147 +1128,6 @@ class Add_Meta_Tags {
 	/*******************************************************************************************************************
 	 * Helper methods.
 	 */
-
-	/**
-	 * Gets the valid tags and attributes for use with checkbox elements in the admin options page and meta boxes.
-	 *
-	 * @return array
-	 */
-	private function get_kses_valid_tags__checkbox() {
-		return array(
-			'li'    => true,
-			'code'  => true,
-			'input' => array(
-				'name'    => true,
-				'checked' => true,
-				'type'    => true,
-				'value'   => true,
-				'id'      => true,
-			),
-		);
-	}
-
-
-	/**
-	 * Gets the valid tags and attributes for use with lists in the admin options page and meta boxes.
-	 *
-	 * @return array
-	 */
-	private function get_kses_valid_tags__list() {
-		return array(
-			'ul' => true,
-			'ol' => true,
-			'li' => true,
-		);
-	}
-
-	/**
-	 * Gets the valid tags and attributes for use with <textarea> elements in the admin options page and meta boxes.
-	 *
-	 * @return array
-	 */
-	private function get_kses_valid_tags__textarea() {
-		return array(
-			'textarea' => array(
-				'name'     => true,
-				'class'    => true,
-				'tabindex' => true,
-				'id'       => true,
-			),
-		);
-	}
-
-
-	/**
-	 * Gets the valid tags and attributes for use with <input type='text'> elements in the admin options page and meta boxes.
-	 *
-	 * @return array
-	 */
-	private function get_kses_valid_tags__text_input() {
-		return array(
-			'input' => array(
-				'type'     => true,
-				'class'    => true,
-				'tabindex' => true,
-				'name'     => true,
-				'id'       => true,
-				'value'    => true,
-			),
-		);
-	}
-
-
-	/**
-	 * Gets the valid tags and attributes for use with general messages in the admin options page and meta boxes.
-	 *
-	 * @return array
-	 */
-	private function get_kses_valid_tags__message() {
-		return array(
-			'strong' => true,
-			'p'      => true,
-			'code'   => true,
-			'em'     => true,
-			'a'      => array(
-				'href'  => true,
-				'class' => true,
-			),
-		);
-	}
-
-
-	/**
-	 * Gets the valid tags and attributes for use with elements related to the meta box in the post/page edit screen.
-	 *
-	 * @return array
-	 */
-	private function form_get_kses_valid_tags__metabox() {
-		return array(
-			'h4'    => true,
-			'br'    => true,
-			'a'     => array(
-				'href'  => true,
-				'class' => true,
-			),
-			'div'   => array(
-				'class' => true,
-				'id'    => true,
-			),
-			'span'  => array(
-				'class' => true,
-			),
-			'p'     => array(
-				'class' => true,
-			),
-			'label' => array(
-				'for' => true,
-			),
-		);
-	}
-
-
-	/**
-	 * Gets the valid tags and attributes for use with elements related to the meta box in the post/page edit screen.
-	 *
-	 * @return array
-	 */
-	private function form_get_kses_valid_tags__metabox_description() {
-		return array(
-			'b'    => true,
-			'br'   => true,
-			'code' => true,
-			'p'    => array(
-				'class' => true,
-			),
-			'div'  => array(
-				'class' => true,
-				'id'    => true,
-			),
-			'span' => array(
-				'class' => true,
-			),
-		);
-	}
 
 
 	/**
