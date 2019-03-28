@@ -159,11 +159,30 @@ class Add_Meta_Tags {
 
 		// These are the field names and values used on the post edit screen for supported post types.
 		$this->mt_seo_fields = array(
-			'mt_seo_title'            => array( __( 'Title', 'add-meta-tags' ), 'text', __( 'If empty, the post title will be used. <br><b>To customize:</b> The <code>%title%</code> placeholder will be replaced with the post title.', 'add-meta-tags' ) ),
-			'mt_seo_description'      => array( __( 'Description', 'add-meta-tags' ), 'textarea', __( 'If empty, the post excerpt will be used.', 'add-meta-tags' ) ),
-			'mt_seo_keywords'         => array( __( 'Keywords', 'add-meta-tags' ), 'text', __( 'Provide a comma-delimited list of keywords. If empty, the post\'s categories and tags will be used. <br><b>To customize:</b> The <code>%cats%</code> placeholder will be replaced with the post\'s categories, and the <code>%tags%</code> placeholder will be replaced with the post\'s tags.', 'add-meta-tags' ) ), // @codingStandardsIgnoreLine: this is not gettext
-			'mt_seo_google_news_meta' => array( __( 'Google News Keywords', 'add-meta-tags' ), 'text', __( 'Provide a comma-delimited list of up to ten keywords. All keywords are given equal value. If empty, this tag will be skipped.', 'add-meta-tags' ) ),
-			'mt_seo_meta'             => array( __( 'Additional Meta tags', 'add-meta-tags' ), 'textarea', __( 'Provide the full XHTML code for each META tag to add. For example: <code>&lt;meta name="robots" content="index,follow" /&gt;</code>', 'add-meta-tags' ) ),
+			'mt_seo_title'            => array(
+				'title'      => __( 'Title', 'add-meta-tags' ),
+				'input_type' => 'text',
+				'desc'       => __( 'If empty, the post title will be used. <br><b>To customize:</b> The <code>%title%</code> placeholder will be replaced with the post title.', 'add-meta-tags' ),
+			),
+			'mt_seo_description'      => array(
+				'title'      => __( 'Description', 'add-meta-tags' ),
+				'input_type' => 'textarea',
+				'desc'       => __( 'If empty, the post excerpt will be used.', 'add-meta-tags' ),
+			),
+			'mt_seo_keywords'         => array(
+				'title'      => __( 'Keywords', 'add-meta-tags' ),
+				'input_type' => 'text',
+				'desc'       =>__( 'Provide a comma-delimited list of keywords. If empty, the post\'s categories and tags will be used. <br><b>To customize:</b> The <code>%cats%</code> placeholder will be replaced with the post\'s categories, and the <code>%tags%</code> placeholder will be replaced with the post\'s tags.', 'add-meta-tags' ) ), // @codingStandardsIgnoreLine: this is not gettext
+			'mt_seo_google_news_meta' => array(
+				'title'      => __( 'Google News Keywords', 'add-meta-tags' ),
+				'input_type' => 'text',
+				'desc'       => __( 'Provide a comma-delimited list of up to ten keywords. All keywords are given equal value. If empty, this tag will be skipped.', 'add-meta-tags' ),
+			),
+			'mt_seo_meta'             => array(
+				'title'      => __( 'Additional Meta tags', 'add-meta-tags' ),
+				'input_type' => 'textarea',
+				'desc'       => __( 'Provide the full XHTML code for each META tag to add. For example: <code>&lt;meta name="robots" content="index,follow" /&gt;</code>', 'add-meta-tags' ),
+			),
 		);
 	}
 
@@ -947,15 +966,18 @@ class Add_Meta_Tags {
 				continue;
 			}
 
-			if ( 'textarea' === $field_data[1] || 'text' === $field_data[1] ) {
-				echo '<div class="form-field ' . esc_attr( $field_name ) . '"><h4><label for="' . esc_attr( $field_name ) . '">' . esc_html( $field_data[0] ) . '</label></h4><div class="mt-form-field-contents"><p>';
+			if ( 'textarea' === $field_data['input_type'] || 'text' === $field_data['input_type'] ) {
+				echo '<div class="form-field ' . esc_attr( $field_name ) . '"><h4><label for="' . esc_attr( $field_name ) . '">' . esc_html( $field_data['title'] ) . '</label></h4><div class="mt-form-field-contents"><p>';
 
-				if ( 'textarea' === $field_data[1] ) {
+				if ( 'textarea' === $field_data['input_type'] ) {
 					echo '<textarea class="wide-seo-box" rows="4" cols="40" tabindex="' . esc_attr( $tabindex ) . '" name="' . esc_attr( $field_name ) . '" id="' . esc_attr( $field_name ) . '">' . esc_textarea( ${$field_name} ) . '</textarea>';
-				} elseif ( 'text' === $field_data[1] ) {
+				} elseif ( 'text' === $field_data['input_type'] ) {
 					echo '<input type="text" class="wide-seo-box" tabindex="' . esc_attr( $tabindex ) . '" name="' . esc_attr( $field_name ) . '" id="' . esc_attr( $field_name ) . '" value="' . esc_attr( ${$field_name} ) . '" />';
 				}
-				echo '</p><p class="description">' . esc_html( $field_data[2] ) . '</p></div></div>';
+				echo wp_kses(
+					'</p><p class="description">' . $field_data['desc'] . '</p></div></div>',
+					$this->form_get_kses_valid_tags__metabox_description()
+				);
 			}
 			$tabindex++;
 		}
@@ -1128,6 +1150,30 @@ class Add_Meta_Tags {
 	/*******************************************************************************************************************
 	 * Helper methods.
 	 */
+
+
+	/**
+	 * Gets the valid tags and attributes for use with elements related to the meta box in the post/page edit screen.
+	 *
+	 * @return array
+	 */
+	private function form_get_kses_valid_tags__metabox_description() {
+		return array(
+			'b'    => true,
+			'br'   => true,
+			'code' => true,
+			'p'    => array(
+				'class' => true,
+			),
+			'div'  => array(
+				'class' => true,
+				'id'    => true,
+			),
+			'span' => array(
+				'class' => true,
+			),
+		);
+	}
 
 
 	/**
