@@ -908,35 +908,18 @@ class Add_Meta_Tags {
 			return;
 		}
 
-		/**
-		 * Filter the meta box fields and their labels.
-		 *
-		 * @param array $this->mt_seo_fields  The valid field names and labels
-		 * @param WP_Post object $post        The post object being considered.
-		 */
-		$meta_fields = apply_filters( 'mt_seo_fields', $this->mt_seo_fields, $post );
+		$mt_seo_title            = (string) get_post_meta( $post->ID, 'mt_seo_title', true );
+		$mt_seo_description      = (string) get_post_meta( $post->ID, 'mt_seo_description', true );
+		$mt_seo_keywords         = (string) get_post_meta( $post->ID, 'mt_seo_keywords', true );
+		$mt_seo_google_news_meta = (string) get_post_meta( $post->ID, 'mt_seo_google_news_meta', true );
+		$mt_seo_meta             = (string) get_post_meta( $post->ID, 'mt_seo_meta', true );
 
-		// Set each of the valid meta field names to their respective values from the db
-		foreach ( (array) $meta_fields as $field_name => $field_data ) {
-			${$field_name} = (string) get_post_meta( $post->ID, $field_name, true );
+		if ( '' === $mt_seo_title ) {
+			$mt_seo_title = (string) get_post_meta( $post->ID, '_yoast_wpseo_title', true );
+		}
 
-			/*
-			 * yoast functionality code is preserved from previous versions, updated only for CS. It is untested.
-			*/
-			// back-compat with Yoast SEO
-			if ( '' === ${$field_name} ) {
-				switch ( $field_name ) {
-					case 'mt_seo_title':
-						$yoast_field_name = '_yoast_wpseo_title';
-						break;
-					case 'mt_seo_description':
-						$yoast_field_name = '_yoast_wpseo_metadesc';
-						break;
-				}
-				if ( isset( $yoast_field_name ) ) {
-					${$field_name} = (string) get_post_meta( $post->ID, $yoast_field_name, true );
-				}
-			}
+		if ( '' === $mt_seo_description ) {
+			$mt_seo_description = (string) get_post_meta( $post->ID, '_yoast_wpseo_metadesc', true );
 		}
 
 		// Set up the title.
