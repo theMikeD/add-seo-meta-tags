@@ -1,13 +1,13 @@
 ### Add SEO Meta Tags
 
-This is a Wordpress Plugin that adds the <em>Description</em> and <em>Keywords</em> XHTML META tags to your site's front page, and to each post, static page and category archive. 
+This is a Wordpress Plugin that adds the <em>Description</em> and <em>Keywords</em> XHTML META tags to your site's front page, and to each post, static page and category archive. In addition, custom tags can be added both sote-wide and per-page.
 
 This operation is automatic, but the generated META tags can be fully customized. 
 
 #### Installation:
-1. Upload this folder and all contents as-is into the `/wp-content/plugins/` directory on your webserver.
-2. Once installed then Activate the Plugin through the Plugins Menu in WordPress.
-3. Visit the configuration page to set your SEO options. THis page is found at Settings, Add Meta Tags
+1. Install by uploading this folder and all contents as-is into the `/wp-content/plugins/` directory on your webserver.
+2. Activate the plugin through the plugins menu.
+3. Visit the configuration page ( Settings -> SEO Options) to set your SEO options.
  
 
 #### Thanks

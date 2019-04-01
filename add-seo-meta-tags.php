@@ -20,7 +20,7 @@ What's new
  * Plugin menu name and Options page name is different (and more accurate now)
  * Options page and meta boxes are generated using proper APIs instead of raw HTML
  * Options page and meta box instructions text is clarified
- * Output EscapingSo much wp_kses()
+ * Output Escaping
  * New filters
  * Removed the reset button on the options panel. Too dangerous.
  * Removes hardcoded strings in the JS and replaces them with localized strings.
