@@ -488,7 +488,7 @@ class Add_Meta_Tags {
 		}
 
 		// First clean the data
-		$clean_data = esc_attr( trim( stripslashes( $data ) ) );
+		$clean_data = trim( stripslashes( $data ) );
 		// Then to special stuff with particular tags
 		switch ( $tag ) {
 			case 'keywords':
@@ -506,7 +506,7 @@ class Add_Meta_Tags {
 				break;
 		}
 		// Finally build up the actual XML, except for the ones we get already rendered
-		return '<meta name="' . $tag . '" content="' . $clean_data . '" />';
+		return '<meta name="' . esc_attr( $tag  ) . '" content="' . esc_attr( $clean_data ) . '" />';
 	}
 
 
@@ -904,7 +904,7 @@ class Add_Meta_Tags {
 		// Show message if nothing is enabled, then bail
 		if ( ! in_array( '1', $global_values, true ) ) {
 			// translators: %1$s is replaced with the opening <a> tag with the href set to the options panel, %2$s is the closing <a> tag
-			echo '<p>' . esc_html( sprintf( __( 'No SEO fields were enabled. Please enable post fields in the %1$s Meta Tags options page %2$s', 'add-meta-tags' ), '<a href="' . get_admin_url() . 'options-general.php?page=' . $this->slug . '">', '</a>' ) ) . '</p>';
+			echo '<p>' . esc_html( sprintf( __( 'No SEO fields were enabled. Please enable post fields in the %1$s Meta Tags options page %2$s', 'add-meta-tags' ), '<a href="' . esc_url( get_admin_url() . 'options-general.php?page=' . $this->slug ) . '">', '</a>' ) ) . '</p>';
 			return;
 		}
 
@@ -932,7 +932,7 @@ class Add_Meta_Tags {
 		echo '<div class="form-field mt_seo_preview form_field"><h4>Preview</h4><div class="mt-form-field-contents"><div id="mt_snippet">';
 		echo '<a href="#" class="title">' . esc_html( substr( $title, 0, $this->max_title_length ) ) . '</a><br>';
 		echo '<a href="#" class="url">' . esc_url( get_permalink() ) . '</a> - <a href="#" class="util">Cached</a>';
-		echo '<p class="desc"><span class="date">' . date( 'd M Y', strtotime( get_the_time( 'r' ) ) ) . '</span> &ndash; <span class="content">' . substr( $mt_seo_description, 0, 140 ) . '</span></p>'; // @codingStandardsIgnoreLine: var is defined indirectly in foreach loop above
+		echo '<p class="desc"><span class="date">' . date( 'd M Y', strtotime( get_the_time( 'r' ) ) ) . '</span> &ndash; <span class="content">' . wp_kses_post( substr( $mt_seo_description, 0, 140 ) ) . '</span></p>'; // @codingStandardsIgnoreLine: var is defined indirectly in foreach loop above
 		echo '</div></div></div>';
 
 		$tabindex = 5000;
