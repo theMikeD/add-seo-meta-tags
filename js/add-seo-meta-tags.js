@@ -97,7 +97,7 @@
 			}
 		 	if ( $title.val() === '' ) {
 		 		// If the title text entry area is blank, then we use the page title
-		 		$( "#mt_snippet .title" ).append( $( "p" ).text(  originalTitle ) );
+		 		$( "#mt_snippet .title" ).text(  originalTitle );
 		 		var count = originalTitle.length;
 		 	} else {
 		 		// Otherwise, use what we have after subbing in the page title for the %title% placeholder
