@@ -9,6 +9,13 @@ This operation is automatic, but the generated META tags can be fully customized
 2. Activate the plugin through the plugins menu.
 3. Visit the configuration page ( Settings -> SEO Options) to set your SEO options.
  
+#### Release History
+2.0.1
+- fix for title being appended more than once. Props @cfleurynesn
+
+2.0.0
+- total rewrite
+
 
 #### Thanks
 The plugin was re-written by @theMikeD to bring the code in line with current best practices and standards.
