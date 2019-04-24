@@ -4,7 +4,7 @@
 Plugin Name: Add SEO Meta Tags
 Plugin URI: https://github.com/theMikeD/add-seo-meta-tags
 Description: Adds the <em>Description</em> and <em>Keywords</em> XHTML META tags to your blog's <em>front page</em> and to each one of the <em>posts</em>, <em>static pages</em> and <em>category archives</em>. This operation is automatic, but the generated META tags can be fully customized. Please read the tips and all other info provided at the <a href="options-general.php?page=amt_options">configuration panel</a>.
-Version: 2.0.1
+Version: 2.0.2
 Author: George Notaras, Automattic, @theMikeD
 License: Apache License, Version 2.0
 
@@ -1428,7 +1428,7 @@ class Add_Meta_Tags {
 		 *
 		 * @param array $stored_post_types Array of post type objects
 		 */
-		$supported_post_types = apply_filters( 'add_meta_tags_supported_post_types', $stored_post_types );
+		$supported_post_types = apply_filters( 'amt_supported_post_types', $stored_post_types );
 
 		if ( $return_hash ) {
 			return $stored_post_types;
@@ -1459,7 +1459,7 @@ class Add_Meta_Tags {
 		 *
 		 * @param array $registered_post_types Array of post type objects
 		 */
-		return apply_filters( 'add_meta_tags_registered_post_types', $registered_post_types );
+		return apply_filters( 'amt_registered_post_types', $registered_post_types );
 	}
 
 

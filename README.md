@@ -10,6 +10,9 @@ This operation is automatic, but the generated META tags can be fully customized
 3. Visit the configuration page ( Settings -> SEO Options) to set your SEO options.
  
 #### Release History
+2.0.2
+- change filter names to be consistent with others
+
 2.0.1
 - fix for title being appended more than once. Props @cfleurynesn
 
