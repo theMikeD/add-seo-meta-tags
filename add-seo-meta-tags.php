@@ -905,7 +905,7 @@ class Add_Meta_Tags {
 		// Show message if nothing is enabled, then bail
 		if ( ! in_array( '1', $global_values, true ) ) {
 			// translators: %1$s is replaced with the opening <a> tag with the href set to the options panel, %2$s is the closing <a> tag
-			echo '<p>' . esc_html( sprintf( __( 'No SEO fields were enabled. Please enable post fields in the %1$s Meta Tags options page %2$s', 'add-meta-tags' ), '<a href="' . esc_url( get_admin_url() . 'options-general.php?page=' . $this->slug ) . '">', '</a>' ) ) . '</p>';
+			echo '<p>' . wp_kses( sprintf( __( 'No SEO fields were enabled. Please enable post fields in the %1$s Meta Tags options page %2$s', 'add-meta-tags' ), '<a href="' . esc_url( get_admin_url() . 'options-general.php?page=' . $this->slug ) . '">', '</a>' ), array( 'a' => array( 'href' => true ) ) ) . '</p>';
 			return;
 		}
 
