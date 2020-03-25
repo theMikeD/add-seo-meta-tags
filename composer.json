@@ -1,0 +1,27 @@
+{
+  "name": "cnmd/vendors",
+  "config": {
+    "platform": {
+      "php": "7.3"
+    }
+  },
+  "require": {
+    "php": ">=7.3",
+    "friendsofphp/php-cs-fixer": "3.0.x-dev"
+  },
+  "require-dev": {
+    "squizlabs/php_codesniffer": "~3",
+    "automattic/vipwpcs": "^1",
+    "wp-coding-standards/wpcs": "^1.2",
+    "dealerdirect/phpcodesniffer-composer-installer": "^0.5.0",
+    "phpunit/phpunit": "^7",
+    "wp-phpunit/wp-phpunit": "5.1",
+    "phpcompatibility/phpcompatibility-wp": "*",
+    "phpcompatibility/php-compatibility": "^9.1"
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Tests\\": "tests/"
+    }
+  }
+}
